@@ -29,7 +29,7 @@ export default function ActionRequestPanel({
 }: ActionRequestPanelProps) {
   const [seekTime, setSeekTime] = useState('')
   const [videoInput, setVideoInput] = useState('')
-  const isParticipant = role === 'PARTICIPANT'
+  const isParticipant = role === 'PARTICIPANT' || role === 'VIEWER'
   const isReviewer = role === 'HOST' || role === 'MODERATOR'
   const pendingRequests = requests.filter((request) => request.status === 'PENDING')
 

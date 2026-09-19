@@ -49,4 +49,17 @@ describe('PlaybackHandler', () => {
     await vi.waitFor(() => expect(ack).toHaveBeenCalledWith({ ok: false, error: 'Forbidden' }))
     expect(playbackMock.update).not.toHaveBeenCalled()
   })
+
+  it('rejects viewer playback the same way as a participant', async () => {
+    expect(RoomRole.VIEWER).toBeDefined()
+
+    const client = socket(RoomRole.VIEWER)
+    authMock.requireRole.mockRejectedValue(new Error('Forbidden'))
+    const io = { to: vi.fn() }
+    new PlaybackHandler(io as never).register(client as never)
+    const ack = vi.fn()
+    client.handlers.get('play')?.({ roomCode: room().roomCode, currentTime: 5 }, ack)
+    await vi.waitFor(() => expect(ack).toHaveBeenCalledWith({ ok: false, error: 'Forbidden' }))
+    expect(playbackMock.update).not.toHaveBeenCalled()
+  })
 })

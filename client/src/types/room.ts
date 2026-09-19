@@ -1,4 +1,4 @@
-export type RoomRole = 'HOST' | 'MODERATOR' | 'PARTICIPANT'
+export type RoomRole = 'HOST' | 'MODERATOR' | 'PARTICIPANT' | 'VIEWER'
 
 export interface RoomHostInfo {
   id: string

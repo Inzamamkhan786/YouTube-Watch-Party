@@ -35,6 +35,22 @@ describe('RoomRoleService', () => {
     })
   })
 
+  it('assigns viewer as a watch-only role and returns the refreshed membership list', async () => {
+    expect(RoomRole.VIEWER).toBeDefined()
+
+    const target = member({ userId: '44444444-4444-4444-8444-444444444444' })
+    const members = [{ id: target.id, role: RoomRole.VIEWER }]
+    memberServiceMock.getActiveMember.mockResolvedValue(target)
+    memberServiceMock.getActiveMembers.mockResolvedValue(members)
+
+    await expect(service.assignRole(target.roomId, target.userId, RoomRole.VIEWER))
+      .resolves.toEqual(members)
+    expect(prismaMock.roomMember.update).toHaveBeenCalledWith({
+      where: { id: target.id },
+      data: { role: RoomRole.VIEWER },
+    })
+  })
+
   it('does not allow assigning HOST through assign_role', async () => {
     await expect(service.assignRole(member().roomId, member().userId, RoomRole.HOST))
       .rejects.toMatchObject({ statusCode: 400 })

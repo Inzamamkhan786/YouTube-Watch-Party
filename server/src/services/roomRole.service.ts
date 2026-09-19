@@ -17,6 +17,9 @@ export class RoomRoleService {
     if (role === RoomRole.HOST) {
       throw new AppError(400, 'Use transfer_host to assign the HOST role')
     }
+    if (role !== RoomRole.MODERATOR && role !== RoomRole.PARTICIPANT && role !== RoomRole.VIEWER) {
+      throw new AppError(400, 'Only MODERATOR, PARTICIPANT, or VIEWER can be assigned')
+    }
 
     const target = await roomMemberService.getActiveMember(roomId, targetUserId)
     if (!target) {

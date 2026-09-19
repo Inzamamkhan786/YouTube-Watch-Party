@@ -48,9 +48,10 @@ export class RoleHandler {
       const roomId = await this.requireHostRoom(socket, payload?.roomCode)
       if (
         payload.role !== RoomRole.MODERATOR &&
-        payload.role !== RoomRole.PARTICIPANT
+        payload.role !== RoomRole.PARTICIPANT &&
+        payload.role !== RoomRole.VIEWER
       ) {
-        throw new AppError(400, 'Only MODERATOR or PARTICIPANT can be assigned')
+        throw new AppError(400, 'Only MODERATOR, PARTICIPANT, or VIEWER can be assigned')
       }
 
       const members = await roomRoleService.assignRole(

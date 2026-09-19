@@ -43,7 +43,7 @@ export class ActionRequestService {
     payload: Prisma.JsonValue | null
   ): Promise<ActionRequestView> {
     const member = await roomAuthorizationService.requireMembership(roomId, userId)
-    if (member.role !== RoomRole.PARTICIPANT) {
+    if (member.role !== RoomRole.PARTICIPANT && member.role !== RoomRole.VIEWER) {
       throw new AppError(400, 'Hosts and moderators can control playback directly')
     }
 

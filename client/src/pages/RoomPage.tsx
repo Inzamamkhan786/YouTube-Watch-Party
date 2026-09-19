@@ -56,6 +56,21 @@ function RoleBadge({ role }: { role: RoomRole }) {
     )
   }
 
+  if (role === 'VIEWER') {
+    return (
+      <span
+        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+        style={{
+          backgroundColor: 'var(--color-muted)',
+          color: 'var(--color-black)',
+          opacity: 0.8,
+        }}
+      >
+        Viewer
+      </span>
+    )
+  }
+
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
@@ -215,7 +230,11 @@ export default function RoomPage() {
     socket.on('members_updated', (payload) => {
       applyMemberSnapshot(payload.members)
       const currentMember = payload.members.find((member) => member.user.id === user?.id)
-      if (currentMember && currentMember.role !== 'PARTICIPANT') {
+      if (
+        currentMember &&
+        currentMember.role !== 'PARTICIPANT' &&
+        currentMember.role !== 'VIEWER'
+      ) {
         socket.emit('get_pending_requests', { roomCode: payload.roomCode })
       }
     })
@@ -256,7 +275,11 @@ export default function RoomPage() {
         ...currentRequests.filter((current) => current.id !== request.id),
         request,
       ])
-      if (request.userId === user?.id || room.currentUserMembership?.role !== 'PARTICIPANT') {
+      if (
+        request.userId === user?.id ||
+        (room.currentUserMembership?.role !== 'PARTICIPANT' &&
+          room.currentUserMembership?.role !== 'VIEWER')
+      ) {
         setRequestNotices((currentNotices) => [...currentNotices, message])
       }
     })
@@ -277,7 +300,10 @@ export default function RoomPage() {
         }
         setConnectionStatus('CONNECTED')
         setSocketError(null)
-        if (room.currentUserMembership?.role !== 'PARTICIPANT') {
+        if (
+          room.currentUserMembership?.role !== 'PARTICIPANT' &&
+          room.currentUserMembership?.role !== 'VIEWER'
+        ) {
           socket.emit('get_pending_requests', { roomCode: room.roomCode })
         }
       })
@@ -387,7 +413,7 @@ export default function RoomPage() {
     emitPlayback('pause', playerRef.current?.getCurrentTime() ?? room?.currentTime ?? 0)
   }
 
-  function handleAssignRole(targetUserId: string, role: 'MODERATOR' | 'PARTICIPANT') {
+  function handleAssignRole(targetUserId: string, role: 'MODERATOR' | 'PARTICIPANT' | 'VIEWER') {
     if (!room || !socketRef.current) return
     socketRef.current.emit(
       'assign_role',
@@ -784,7 +810,7 @@ export default function RoomPage() {
                             aria-label={`Change role for ${name}`}
                             value={member.role}
                             onChange={(event) => {
-                              const nextRole = event.target.value as 'MODERATOR' | 'PARTICIPANT'
+                              const nextRole = event.target.value as 'MODERATOR' | 'PARTICIPANT' | 'VIEWER'
                               if (
                                 window.confirm(
                                   `Change ${name}'s role to ${nextRole.toLowerCase()}?`
@@ -797,6 +823,7 @@ export default function RoomPage() {
                             style={{ borderColor: 'var(--color-muted)' }}
                           >
                             <option value="PARTICIPANT">Participant</option>
+                            <option value="VIEWER">Viewer</option>
                             <option value="MODERATOR">Moderator</option>
                           </select>
                           <Button

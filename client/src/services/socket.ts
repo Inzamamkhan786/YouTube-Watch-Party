@@ -21,7 +21,7 @@ export interface RoomPresence {
   roomCode: string
   userId: string
   username: string
-  role: 'HOST' | 'MODERATOR' | 'PARTICIPANT'
+  role: 'HOST' | 'MODERATOR' | 'PARTICIPANT' | 'VIEWER'
   joinedAt: string
 }
 
@@ -34,7 +34,7 @@ export interface RoomLeftPresence {
 
 export interface RoomSocketMember {
   id: string
-  role: 'HOST' | 'MODERATOR' | 'PARTICIPANT'
+  role: 'HOST' | 'MODERATOR' | 'PARTICIPANT' | 'VIEWER'
   joinedAt: string
   user: {
     id: string
