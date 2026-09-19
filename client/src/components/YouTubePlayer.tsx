@@ -97,6 +97,15 @@ const YouTubePlayer = forwardRef(function YouTubePlayer(
   }), [ready])
 
   useEffect(() => {
+    if (!playerRef.current || !ready || !videoId) return
+
+    const currentVideoId = playerRef.current.getVideoData().video_id
+    if (currentVideoId !== videoId) {
+      playerRef.current.cueVideoById(videoId, 0)
+    }
+  }, [videoId, ready])
+
+  useEffect(() => {
     let disposed = false
 
     void loadYouTubeApi()
@@ -116,6 +125,9 @@ const YouTubePlayer = forwardRef(function YouTubePlayer(
             onReady: () => {
               if (disposed) return
               setReady(true)
+              if (videoId) {
+                playerRef.current?.cueVideoById(videoId, 0)
+              }
               callbacksRef.current.onReady?.()
             },
             onStateChange: (event) => {
