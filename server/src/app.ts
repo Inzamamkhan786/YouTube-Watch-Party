@@ -13,6 +13,10 @@ import roomRoutes from './routes/room.routes'
 export function createApp(): Express {
   const app = express()
 
+  // Render sits in front of the app as a single reverse proxy.
+  // Trust that proxy so X-Forwarded-For is accurate for rate limiting.
+  app.set('trust proxy', 1)
+
   // ── Global Middleware ──────────────────────────────────────────
   app.disable('x-powered-by')
   app.use(helmet())
