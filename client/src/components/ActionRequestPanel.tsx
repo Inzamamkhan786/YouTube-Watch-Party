@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Button from './ui/Button'
-import { extractYouTubeVideoId } from './VideoInput'
+import { extractYouTubeVideoId } from '../utils/youtube'
 import type { ActionRequest, RequestType } from '../services/socket'
 import type { RoomRole } from '../types/room'
 

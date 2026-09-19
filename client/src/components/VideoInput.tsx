@@ -1,25 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import Button from './ui/Button'
 import Input from './ui/Input'
-
-const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/
-
-export function extractYouTubeVideoId(input: string): string | null {
-  const trimmed = input.trim()
-  if (VIDEO_ID.test(trimmed)) return trimmed
-
-  try {
-    const url = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`)
-    if (url.hostname === 'youtu.be' || url.hostname.endsWith('.youtu.be')) {
-      const id = url.pathname.slice(1).split('/')[0]
-      return VIDEO_ID.test(id) ? id : null
-    }
-    const id = url.searchParams.get('v')
-    return id && VIDEO_ID.test(id) ? id : null
-  } catch {
-    return null
-  }
-}
+import { extractYouTubeVideoId } from '../utils/youtube'
 
 interface VideoInputProps {
   disabled?: boolean

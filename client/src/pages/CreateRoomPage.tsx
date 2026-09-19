@@ -5,32 +5,7 @@ import { ROUTES } from '../utils/constants'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 
-/**
- * Extracts a YouTube video ID from a full URL or direct ID.
- */
-function parseYouTubeId(input: string): string | undefined {
-  const trimmed = input.trim()
-  if (!trimmed) return undefined
-
-  // Direct 11-char ID
-  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
-    return trimmed
-  }
-
-  // URLs like youtube.com/watch?v=ID or youtu.be/ID
-  try {
-    const url = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`)
-    if (url.hostname.includes('youtu.be')) {
-      return url.pathname.slice(1)
-    }
-    const v = url.searchParams.get('v')
-    if (v) return v
-  } catch {
-    // Return trimmed string fallback
-  }
-
-  return trimmed
-}
+import { extractYouTubeVideoId } from '../utils/youtube'
 
 export default function CreateRoomPage() {
   const navigate = useNavigate()
@@ -57,7 +32,7 @@ export default function CreateRoomPage() {
       return
     }
 
-    const initialVideoId = videoInput.trim() ? parseYouTubeId(videoInput) : undefined
+    const initialVideoId = videoInput.trim() ? extractYouTubeVideoId(videoInput) ?? undefined : undefined
 
     try {
       setLoading(true)
