@@ -1,0 +1,48 @@
+import dotenv from 'dotenv'
+import path from 'path'
+
+// Load .env from the server root
+dotenv.config({ path: path.resolve(__dirname, '../../.env') })
+
+function optional(key: string, fallback: string): string {
+  return process.env[key] ?? fallback
+}
+
+function required(key: string, devFallback?: string): string {
+  const val = process.env[key] ?? (process.env.NODE_ENV === 'development' ? devFallback : undefined)
+  if (!val) {
+    throw new Error(`[Config] Missing required environment variable: ${key}`)
+  }
+  return val
+}
+
+/**
+ * Typed, validated environment configuration.
+ * Add new variables here as modules are implemented.
+ * Throws at startup if a required variable is missing.
+ */
+export const env = {
+  NODE_ENV: optional('NODE_ENV', 'development'),
+  PORT: parseInt(optional('PORT', '4000'), 10),
+  CLIENT_URL: optional('CLIENT_URL', 'http://localhost:5173'),
+  REDIS_URL: optional('REDIS_URL', ''),
+  DATABASE_URL: required(
+    'DATABASE_URL',
+    'postgresql://postgres:postgres@localhost:5432/watchparty?schema=public'
+  ),
+
+  // Module 2 — Auth
+  JWT_SECRET: required(
+    'JWT_SECRET',
+    'watchparty-super-secret-jwt-key-for-development-mode-only'
+  ),
+  JWT_EXPIRES_IN: optional('JWT_EXPIRES_IN', '7d'),
+  BCRYPT_ROUNDS: parseInt(optional('BCRYPT_ROUNDS', '10'), 10),
+} as const
+
+if (!Number.isInteger(env.BCRYPT_ROUNDS) || env.BCRYPT_ROUNDS < 10 || env.BCRYPT_ROUNDS > 15) {
+  throw new Error('[Config] BCRYPT_ROUNDS must be an integer between 10 and 15')
+}
+
+export const isDev = env.NODE_ENV === 'development'
+export const isProd = env.NODE_ENV === 'production'

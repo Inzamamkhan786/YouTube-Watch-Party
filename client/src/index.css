@@ -1,0 +1,329 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────
+   Brand Design Tokens
+   Single source of truth — do NOT add colors outside this block
+───────────────────────────────────────────────────────────── */
+:root {
+  /* Brand Colors */
+  --color-primary: #ff2e4c;
+  --color-primary-soft: #ffa3b3;
+  --color-primary-hover: #ff2e4c;
+  --color-white: #fefefe;
+  --color-black: #0f0f0f;
+  --color-muted: #dfe1e3;
+  --color-muted-dark: #dfe1e3;
+  --color-blue: #065fd4;
+  --color-blue-hover: #065fd4;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 0 var(--color-muted);
+  --shadow-md: 0 2px 0 var(--color-muted);
+  --shadow-lg: 0 3px 0 var(--color-muted);
+
+  /* Transitions */
+  --transition-fast: 120ms ease;
+  --transition-base: 200ms ease;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Base Styles
+───────────────────────────────────────────────────────────── */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--color-white);
+    color: var(--color-black);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  a {
+    color: var(--color-blue);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  a:hover {
+    color: var(--color-blue-hover);
+    text-decoration: underline;
+  }
+
+  img,
+  video {
+    display: block;
+    max-width: 100%;
+  }
+
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Component Classes
+   Reusable building blocks for later modules
+───────────────────────────────────────────────────────────── */
+@layer components {
+  /* ── Buttons ── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-md
+           transition-colors focus-visible:outline-none focus-visible:ring-2
+           focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed
+           select-none whitespace-nowrap;
+    transition-duration: var(--transition-fast);
+  }
+
+  .btn-sm  { @apply text-xs px-3 py-1.5; }
+  .btn-md  { @apply text-sm px-4 py-2; }
+  .btn-lg  { @apply text-base px-6 py-2.5; }
+
+  .btn-primary {
+    @apply btn btn-md;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    --tw-ring-color: var(--color-primary);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+  }
+
+  .btn-secondary {
+    @apply btn btn-md border;
+    border-color: var(--color-muted);
+    color: var(--color-black);
+    background-color: var(--color-white);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-muted);
+  }
+
+  .btn-ghost {
+    @apply btn btn-md;
+    color: var(--color-black);
+    background-color: transparent;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background-color: var(--color-muted);
+  }
+
+  /* ── Inputs ── */
+  .input {
+    @apply w-full px-3 py-2 text-sm rounded-md border outline-none;
+    border-color: var(--color-muted);
+    background-color: var(--color-white);
+    color: var(--color-black);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+  .input::placeholder {
+    color: var(--color-muted-dark);
+  }
+  .input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-soft);
+  }
+  .input.error {
+    border-color: var(--color-primary);
+  }
+
+  /* ── Card ── */
+  .card {
+    @apply rounded-lg border;
+    border-color: var(--color-muted);
+    background-color: var(--color-white);
+    box-shadow: var(--shadow-sm);
+  }
+  .card-body { @apply p-6; }
+  .card-header { @apply px-6 py-4 border-b; border-color: var(--color-muted); }
+  .card-footer { @apply px-6 py-4 border-t; border-color: var(--color-muted); }
+
+  /* ── Divider ── */
+  .divider {
+    @apply w-full h-px;
+    background-color: var(--color-muted);
+  }
+
+  /* ── Badge ── */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-primary {
+    @apply badge;
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+  }
+  .badge-muted {
+    @apply badge;
+    background-color: var(--color-muted);
+    color: var(--color-black);
+  }
+
+  .skeleton {
+    min-height: 1rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-muted);
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  .toast {
+    @apply fixed right-4 top-20 z-[70] flex max-w-sm items-center gap-4 rounded-md border px-4 py-3 text-xs shadow-md;
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-soft);
+    color: var(--color-black);
+  }
+
+  .toast button {
+    color: var(--color-blue);
+    font-weight: 600;
+    text-decoration: underline;
+  }
+}
+
+.room-page {
+  width: min(100%, 1440px);
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.room-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem);
+  gap: 1rem;
+  align-items: start;
+}
+
+.room-main,
+.room-sidebar {
+  min-width: 0;
+}
+
+.room-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.room-sidebar {
+  display: flex;
+  min-height: min(70vh, 48rem);
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.room-participants {
+  max-height: 20rem;
+  overflow: hidden;
+}
+
+.room-chat {
+  min-height: 26rem;
+  flex: 1;
+}
+
+.room-chat > section {
+  height: 100%;
+}
+
+.room-video-card {
+  overflow: hidden;
+  border: 1px solid var(--color-black);
+  border-radius: var(--radius-md);
+  background-color: var(--color-black);
+}
+
+.room-video-card .aspect-video {
+  background-color: var(--color-black);
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes reaction-float-up {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  15%,
+  75% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+}
+
+.reaction-float {
+  animation: reaction-float-up 2.8s ease-out forwards;
+  will-change: opacity, transform;
+}
+
+@media (max-width: 900px) {
+  .room-page {
+    padding: 1rem;
+  }
+
+  .room-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .room-sidebar {
+    min-height: auto;
+  }
+
+  .room-participants {
+    max-height: none;
+  }
+
+  .room-chat {
+    min-height: 22rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .room-page {
+    padding: 0.75rem;
+  }
+}

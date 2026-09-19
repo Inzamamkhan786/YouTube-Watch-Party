@@ -1,0 +1,176 @@
+// Prisma Schema for YouTube Watch Party (YouTube Parity)
+// Datasource: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────
+
+enum RoomRole {
+  HOST
+  MODERATOR
+  PARTICIPANT
+}
+
+enum RequestType {
+  REQUEST_PLAY
+  REQUEST_PAUSE
+  REQUEST_SEEK
+  REQUEST_CHANGE_VIDEO
+}
+
+enum ActionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+// ─────────────────────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  displayName  String?
+  avatarUrl    String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  hostedRooms          Room[]          @relation("RoomHost")
+  roomMemberships      RoomMember[]
+  messages             Message[]
+  reactions            Reaction[]
+  actionRequests       ActionRequest[] @relation("UserActionRequests")
+  reviewedRequests     ActionRequest[] @relation("ReviewedActionRequests")
+
+  @@index([email])
+  @@map("users")
+}
+
+model Room {
+  id          String   @id @default(uuid())
+  roomCode    String   @unique
+  title       String
+  description String?
+  isPrivate   Boolean  @default(false)
+  passcode    String?
+  maxMembers  Int      @default(50)
+  hostId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Authoritative YouTube playback state
+  currentVideoId String?
+  isPlaying      Boolean  @default(false)
+  currentTime    Float    @default(0.0)
+  stateUpdatedAt DateTime @default(now())
+
+  // Relations
+  host           User            @relation("RoomHost", fields: [hostId], references: [id], onDelete: Cascade)
+  members        RoomMember[]
+  messages       Message[]
+  reactions      Reaction[]
+  actionRequests ActionRequest[]
+
+  @@index([roomCode])
+  @@index([hostId])
+  @@map("rooms")
+}
+
+model RoomMember {
+  id         String   @id @default(uuid())
+  roomId     String
+  userId     String
+  role       RoomRole @default(PARTICIPANT)
+  isMuted    Boolean  @default(false)
+  isBanned   Boolean  @default(false)
+  joinedAt   DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  // Relations
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // One membership per user per room
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
+  @@map("room_members")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  roomId    String
+  userId    String
+  content   String   @db.Text
+  isSystem  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  room      Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions Reaction[]
+
+  @@index([roomId])
+  @@index([userId])
+  @@index([roomId, createdAt])
+  @@map("messages")
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  roomId    String
+  userId    String
+  messageId String?
+  emoji     String
+  videoTime Float    @default(0)
+  createdAt DateTime @default(now())
+
+  // Relations
+  room    Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([userId])
+  @@index([messageId])
+  @@map("reactions")
+}
+
+model ActionRequest {
+  id           String       @id @default(uuid())
+  roomId       String
+  userId       String
+  requestType  RequestType
+  payload      Json?
+  status       ActionStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relations
+  room       Room  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user       User  @relation("UserActionRequests", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("ReviewedActionRequests", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([roomId])
+  @@index([userId])
+  @@index([roomId, status])
+  @@map("action_requests")
+}
