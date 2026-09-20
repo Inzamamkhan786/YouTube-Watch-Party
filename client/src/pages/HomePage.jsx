@@ -27,11 +27,11 @@ export default function HomePage() {
       <div className="card card-body max-w-md w-full text-center space-y-6">
         {/* Wordmark */}
         <div className="space-y-4">
-          <div className="mx-auto max-w-[18rem]">
+          <div className="mx-auto w-full max-w-[12rem] sm:max-w-[14rem] md:max-w-[18rem]">
             <InteractiveParticleText
               key={isAuthenticated ? 'authenticated-home' : 'guest-home'}
               text="SyncTube"
-              className="h-12 w-full md:h-14"
+              className="h-10 w-full sm:h-12 md:h-14"
             />
           </div>
           <p

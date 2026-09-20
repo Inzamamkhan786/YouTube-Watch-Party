@@ -40,8 +40,8 @@ export default function InteractiveParticleText({
 
     const rebuildParticles = () => {
       const rect = wrapper.getBoundingClientRect()
-      const width = Math.max(rect.width, 220)
-      const height = Math.max(rect.height, 100)
+      const width = Math.max(rect.width, 120)
+      const height = Math.max(rect.height, 80)
       const devicePixelRatio = window.devicePixelRatio || 1
 
       canvas.width = width * devicePixelRatio
@@ -61,7 +61,7 @@ export default function InteractiveParticleText({
       offscreenContext.textAlign = 'left'
       offscreenContext.textBaseline = 'middle'
 
-      const fontSize = Math.max(Math.min(width * 0.18, 88), 44)
+      const fontSize = Math.max(Math.min(width * 0.17, 84), 28)
       offscreenContext.font = `900 ${fontSize}px Segoe UI, Inter, Arial, sans-serif`
 
       const syncText = 'Sync'
