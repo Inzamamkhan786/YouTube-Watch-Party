@@ -61,7 +61,7 @@ export default function InteractiveParticleText({
       offscreenContext.textAlign = 'left'
       offscreenContext.textBaseline = 'middle'
 
-      const fontSize = Math.max(Math.min(width * 0.17, 84), 28)
+      const fontSize = Math.max(Math.min(width * 0.13, 64), 18)
       offscreenContext.font = `900 ${fontSize}px Segoe UI, Inter, Arial, sans-serif`
 
       const syncText = 'Sync'

@@ -30,7 +30,7 @@ export default function MainLayout() {
       >
         <Link
           to="/"
-          className="font-semibold text-base hover:no-underline"
+          className="font-semibold text-sm hover:no-underline sm:text-base"
           style={{ color: 'var(--color-black)' }}
         >
           Watch
