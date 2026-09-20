@@ -42,6 +42,38 @@ describe('RoomService', () => {
     expect(result.currentUserMembership?.role).toBe('HOST')
   })
 
+  it('creates a room with an initial YouTube video ID', async () => {
+    const created = {
+      ...room(),
+      currentVideoId: 'dQw4w9WgXcQ',
+      host: { id: room().hostId, username: 'host', displayName: 'Host', avatarUrl: null },
+      _count: { members: 1 },
+    }
+    prismaMock.room.findUnique.mockResolvedValue(null)
+    let passedData: any = null
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
+      callback({
+        room: {
+          create: vi.fn().mockImplementation((args: any) => {
+            passedData = args.data
+            return Promise.resolve(created)
+          }),
+        },
+        roomMember: {
+          create: vi.fn().mockResolvedValue(undefined),
+        },
+      })
+    )
+
+    const result = await service.createRoom(room().hostId, {
+      title: 'YouTube Watch Party',
+      initialVideoId: 'dQw4w9WgXcQ',
+    })
+
+    expect(passedData?.currentVideoId).toBe('dQw4w9WgXcQ')
+    expect(result.currentVideoId).toBe('dQw4w9WgXcQ')
+  })
+
   it.each([
     { title: '' },
     { title: 'x' },

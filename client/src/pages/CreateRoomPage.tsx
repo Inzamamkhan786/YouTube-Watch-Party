@@ -32,7 +32,15 @@ export default function CreateRoomPage() {
       return
     }
 
-    const initialVideoId = videoInput.trim() ? extractYouTubeVideoId(videoInput) ?? undefined : undefined
+    let initialVideoId: string | undefined
+    if (videoInput.trim()) {
+      const parsedId = extractYouTubeVideoId(videoInput)
+      if (!parsedId) {
+        setError('Please enter a valid YouTube video URL or 11-character video ID.')
+        return
+      }
+      initialVideoId = parsedId
+    }
 
     try {
       setLoading(true)

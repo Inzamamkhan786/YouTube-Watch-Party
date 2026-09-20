@@ -4,8 +4,6 @@ import type { YouTubePlayerHandle } from './YouTubePlayer'
 
 const DRIFT_THRESHOLD_SECONDS = 1.5
 const PLAYING = 1
-const PAUSED = 2
-const CUED = 5
 
 interface SyncManagerProps {
   socket: RoomSocket | null
@@ -16,10 +14,12 @@ interface SyncManagerProps {
 }
 
 function effectiveTime(state: RoomSocketState): number {
-  const elapsed = state.isPlaying
-    ? (Date.now() - Date.parse(state.stateUpdatedAt)) / 1000
+  const parsed = state.stateUpdatedAt ? Date.parse(state.stateUpdatedAt) : NaN
+  const elapsed = state.isPlaying && Number.isFinite(parsed)
+    ? Math.max(0, (Date.now() - parsed) / 1000)
     : 0
-  return Math.max(0, state.currentTime + elapsed)
+  const base = Number.isFinite(state.currentTime) ? Math.max(0, state.currentTime) : 0
+  return base + elapsed
 }
 
 export default function SyncManager({
@@ -52,21 +52,34 @@ export default function SyncManager({
       if (!currentState || !currentState.videoId || !player.isReady()) return
 
       const targetTime = effectiveTime(currentState)
-      if (player.getVideoId() !== currentState.videoId) {
+      const currentVideoId = player.getVideoId()
+
+      // Only switch video if player has reported an ID and it really differs from target video
+      if (currentVideoId && currentVideoId !== currentState.videoId) {
         player.loadVideo(currentState.videoId, targetTime, currentState.isPlaying)
         return
       }
 
-      const localTime = player.getCurrentTime()
-      if (Math.abs(localTime - targetTime) > DRIFT_THRESHOLD_SECONDS) {
-        player.seekTo(targetTime)
-      }
-
       const localPlayerState = player.getPlayerState()
+
+      // When the server says isPlaying: true
       if (currentState.isPlaying) {
-        if (localPlayerState !== PLAYING) player.play()
-      } else if (localPlayerState !== PAUSED && localPlayerState !== CUED) {
-        player.pause()
+        const localTime = player.getCurrentTime()
+        if (Number.isFinite(localTime) && Math.abs(localTime - targetTime) > DRIFT_THRESHOLD_SECONDS) {
+          player.seekTo(targetTime)
+        }
+        if (localPlayerState !== PLAYING) {
+          player.play()
+        }
+      } else {
+        // When the server says isPlaying: false
+        if (localPlayerState === PLAYING) {
+          player.pause()
+        }
+        const localTime = player.getCurrentTime()
+        if (Number.isFinite(localTime) && Math.abs(localTime - targetTime) > DRIFT_THRESHOLD_SECONDS) {
+          player.seekTo(targetTime)
+        }
       }
     }
 

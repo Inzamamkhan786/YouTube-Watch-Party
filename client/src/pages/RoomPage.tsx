@@ -27,6 +27,18 @@ import Toast from '../components/ui/Toast'
 /**
  * Role badge displaying appropriate color according to design system.
  */
+function getPlayerMetric<T>(
+  player: YouTubePlayerHandle | null | undefined,
+  method: 'getCurrentTime' | 'getDuration',
+  fallback: T
+): T {
+  if (!player || typeof player[method] !== 'function') {
+    return fallback
+  }
+
+  return player[method]() as T
+}
+
 function RoleBadge({ role }: { role: RoomRole }) {
   if (role === 'HOST') {
     return (
@@ -100,6 +112,8 @@ export default function RoomPage() {
   const [roomSocket, setRoomSocket] = useState<RoomSocket | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<SocketConnectionStatus>('CONNECTING')
   const [playerReady, setPlayerReady] = useState(false)
+  const [displayTime, setDisplayTime] = useState<number>(0)
+  const [displayDuration, setDisplayDuration] = useState<number>(0)
   const playerRef = useRef<YouTubePlayerHandle | null>(null)
   const socketRef = useRef<RoomSocket | null>(null)
 
@@ -408,9 +422,47 @@ export default function RoomPage() {
     socketRef.current.emit('change_video', { roomCode: room.roomCode, videoId })
   }
 
+  const handlePlayerStateChange = useCallback(
+    (state: number) => {
+      if (!canControlPlayback || !playerRef.current) return
+      // YT.PlayerState.PLAYING is 1, PAUSED is 2
+      if (state === 1 && !room?.isPlaying) {
+        const time = playerRef.current.getCurrentTime()
+        emitPlayback('play', Number.isFinite(time) ? time : room?.currentTime ?? 0)
+      } else if (state === 2 && room?.isPlaying) {
+        const time = playerRef.current.getCurrentTime()
+        emitPlayback('pause', Number.isFinite(time) ? time : room?.currentTime ?? 0)
+      }
+    },
+    [canControlPlayback, room?.isPlaying, room?.currentTime]
+  )
+
+  useEffect(() => {
+    if (Number.isFinite(room?.currentTime)) {
+      setDisplayTime(room?.currentTime ?? 0)
+    }
+  }, [room?.currentTime])
+
+  useEffect(() => {
+    if (!room?.isPlaying) return
+    const interval = window.setInterval(() => {
+      if (playerRef.current?.isReady()) {
+        const t = playerRef.current.getCurrentTime()
+        if (typeof t === 'number' && Number.isFinite(t)) setDisplayTime(t)
+        const d = playerRef.current.getDuration()
+        if (typeof d === 'number' && Number.isFinite(d) && d > 0) setDisplayDuration(d)
+      } else if (room) {
+        const parsed = Date.parse(room.stateUpdatedAt)
+        const elapsed = Number.isFinite(parsed) ? (Date.now() - parsed) / 1000 : 0
+        setDisplayTime(Math.max(0, (room.currentTime ?? 0) + elapsed))
+      }
+    }, 400)
+    return () => window.clearInterval(interval)
+  }, [room?.isPlaying, room?.currentTime, room?.stateUpdatedAt])
+
   function handlePlayerEnded(): void {
     if (!canControlPlayback) return
-    emitPlayback('pause', playerRef.current?.getCurrentTime() ?? room?.currentTime ?? 0)
+    emitPlayback('pause', getPlayerMetric(playerRef.current, 'getCurrentTime', room?.currentTime ?? 0))
   }
 
   function handleAssignRole(targetUserId: string, role: 'MODERATOR' | 'PARTICIPANT' | 'VIEWER') {
@@ -660,7 +712,12 @@ export default function RoomPage() {
               <YouTubePlayer
                 ref={playerRef}
                 videoId={room.currentVideoId ?? null}
-                onReady={() => setPlayerReady(true)}
+                onReady={() => {
+                  setPlayerReady(true)
+                  const d = playerRef.current?.getDuration()
+                  if (typeof d === 'number' && Number.isFinite(d) && d > 0) setDisplayDuration(d)
+                }}
+                onStateChange={handlePlayerStateChange}
                 onEnded={handlePlayerEnded}
                 onError={setSocketError}
               />
@@ -670,11 +727,14 @@ export default function RoomPage() {
                 canControl
                 ready={playerReady && connectionStatus === 'CONNECTED'}
                 isPlaying={room.isPlaying}
-                currentTime={room.currentTime}
-                duration={playerRef.current?.getDuration() ?? 0}
-                onPlay={() => emitPlayback('play', playerRef.current?.getCurrentTime() ?? room.currentTime)}
-                onPause={() => emitPlayback('pause', playerRef.current?.getCurrentTime() ?? room.currentTime)}
-                onSeek={(seconds) => emitPlayback('seek', seconds)}
+                currentTime={displayTime}
+                duration={displayDuration || getPlayerMetric(playerRef.current, 'getDuration', 0)}
+                onPlay={() => emitPlayback('play', getPlayerMetric(playerRef.current, 'getCurrentTime', displayTime))}
+                onPause={() => emitPlayback('pause', getPlayerMetric(playerRef.current, 'getCurrentTime', displayTime))}
+                onSeek={(seconds) => {
+                  setDisplayTime(seconds)
+                  emitPlayback('seek', seconds)
+                }}
               />
             )}
           </div>
@@ -699,7 +759,7 @@ export default function RoomPage() {
           <ReactionPanel
             socket={roomSocket}
             roomId={room.id}
-            videoTime={playerRef.current?.getCurrentTime() ?? room.currentTime}
+            videoTime={displayTime}
             connected={connectionStatus === 'CONNECTED'}
           />
 

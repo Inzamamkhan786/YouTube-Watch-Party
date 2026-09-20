@@ -13,7 +13,10 @@ interface PlaybackControlsProps {
 }
 
 function formatTime(seconds: number): string {
-  const safeSeconds = Math.max(0, Math.floor(seconds))
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return '0:00'
+  }
+  const safeSeconds = Math.floor(seconds)
   const minutes = Math.floor(safeSeconds / 60)
   const remainder = safeSeconds % 60
   return `${minutes}:${remainder.toString().padStart(2, '0')}`
@@ -29,17 +32,24 @@ export default function PlaybackControls({
   onPause,
   onSeek,
 }: PlaybackControlsProps) {
-  const [draftTime, setDraftTime] = useState(currentTime)
+  const safeCurrentTime = Number.isFinite(currentTime) ? Math.max(0, currentTime) : 0
+  const safeDuration = Number.isFinite(duration) ? Math.max(0, duration) : 0
+  const [draftTime, setDraftTime] = useState(safeCurrentTime)
+
   const disabled = !canControl || !ready
-  const max = Math.max(duration, currentTime, 1)
+  const max = Math.max(safeDuration, safeCurrentTime, 1)
 
   useEffect(() => {
-    setDraftTime(currentTime)
-  }, [currentTime])
+    setDraftTime(safeCurrentTime)
+  }, [safeCurrentTime])
 
   function commitSeek() {
     onSeek(draftTime)
   }
+
+  const sliderValue = Number.isFinite(draftTime)
+    ? Math.min(Math.max(0, draftTime), max)
+    : 0
 
   return (
     <div className="space-y-3 border-t px-4 py-4" style={{ borderColor: 'var(--color-muted)' }}>
@@ -55,7 +65,7 @@ export default function PlaybackControls({
           {isPlaying ? 'Pause' : 'Play'}
         </Button>
         <span className="text-xs tabular-nums" style={{ color: 'var(--color-black)', opacity: 0.65 }}>
-          {formatTime(draftTime)} / {formatTime(duration)}
+          {formatTime(draftTime)} / {formatTime(safeDuration)}
         </span>
         {!canControl && (
           <span className="ml-auto text-xs" style={{ color: 'var(--color-black)', opacity: 0.55 }}>
@@ -69,9 +79,12 @@ export default function PlaybackControls({
         min={0}
         max={max}
         step={0.25}
-        value={Math.min(draftTime, max)}
+        value={sliderValue}
         disabled={disabled}
-        onChange={(event) => setDraftTime(Number(event.target.value))}
+        onChange={(event) => {
+          const val = Number(event.target.value)
+          setDraftTime(Number.isFinite(val) ? val : 0)
+        }}
         onPointerUp={commitSeek}
         onKeyUp={(event) => {
           if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') commitSeek()

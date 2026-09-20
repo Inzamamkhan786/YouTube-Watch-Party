@@ -10,6 +10,7 @@ import CreateRoomPage from './pages/CreateRoomPage'
 import JoinRoomPage from './pages/JoinRoomPage'
 import RoomPage from './pages/RoomPage'
 import ProtectedRoute from './components/ProtectedRoute'
+import ErrorBoundary from './components/ErrorBoundary'
 import { ROUTES } from './utils/constants'
 
 /**
@@ -17,30 +18,32 @@ import { ROUTES } from './utils/constants'
  */
 export default function App() {
   return (
-    <AppProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public shell */}
-            <Route element={<MainLayout />}>
-              <Route path={ROUTES.HOME} element={<HomePage />} />
-              <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-              <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+    <ErrorBoundary>
+      <AppProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public shell */}
+              <Route element={<MainLayout />}>
+                <Route path={ROUTES.HOME} element={<HomePage />} />
+                <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+                <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
 
-              <Route element={<ProtectedRoute />}>
-                <Route path={ROUTES.ROOMS_CREATE} element={<CreateRoomPage />} />
-                <Route path={ROUTES.ROOMS_JOIN} element={<JoinRoomPage />} />
-                <Route path={ROUTES.ROOM} element={<RoomPage />} />
-                <Route path="/rooms/create" element={<Navigate to={ROUTES.ROOMS_CREATE} replace />} />
-                <Route path="/rooms/join" element={<Navigate to={ROUTES.ROOMS_JOIN} replace />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route path={ROUTES.ROOMS_CREATE} element={<CreateRoomPage />} />
+                  <Route path={ROUTES.ROOMS_JOIN} element={<JoinRoomPage />} />
+                  <Route path={ROUTES.ROOM} element={<RoomPage />} />
+                  <Route path="/rooms/create" element={<Navigate to={ROUTES.ROOMS_CREATE} replace />} />
+                  <Route path="/rooms/join" element={<Navigate to={ROUTES.ROOMS_JOIN} replace />} />
+                </Route>
               </Route>
-            </Route>
 
-            {/* Catch-all */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </AppProvider>
+              {/* Catch-all */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </AppProvider>
+    </ErrorBoundary>
   )
 }
