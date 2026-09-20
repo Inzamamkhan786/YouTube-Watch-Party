@@ -3,9 +3,9 @@
 
 SyncTube is a real-time collaborative web application where multiple users join a shared room and watch YouTube videos together, perfectly in sync. Playback (play, pause, seek, change video) is controlled through a **role-based access control (RBAC)** system and validated by an **authoritative backend**. The app also includes chat, emoji reactions, participant action-approval requests, persistent rooms, and a Redis-ready horizontally scalable WebSocket layer.
 
-> **Live Link:** [https://you-tube-watch-party-theta.vercel.app/](https://you-tube-watch-party-theta.vercel.app/)
-> 🎥 **Demo Video:** [Watch the SyncTube Demo on Google Drive](https://drive.google.com/file/d/1GPvfMgj98dacDt61nymFQ-4STLCBu7Gf/view?usp=drivesdk)
-> **Backend Health Check:** `https://<your-backend>.onrender.com/health` *(replace with your deployed URL)*
+- 🌐 **Live Link:** [SyncTube](https://you-tube-watch-party-theta.vercel.app/)
+- 🎥 **Demo Video:** [Watch the SyncTube Demo](https://drive.google.com/file/d/1GPvfMgj98dacDt61nymFQ-4STLCBu7Gf/view?usp=drivesdk)
+- ⚙️ **Backend Health Check:** `https://<your-backend>.onrender.com/health`
 
 ---
 
