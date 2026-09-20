@@ -11,7 +11,7 @@ export interface CreateRoomInput {
   isPrivate?: boolean
   passcode?: string
   maxMembers?: number
-  initialVideoId?: string
+  initialVideoId: string
 }
 
 export interface RoomHostInfo {
@@ -72,11 +72,10 @@ export class RoomService {
       throw new AppError(400, 'Maximum members must be between 1 and 1000')
     }
 
-    if (
-      input.initialVideoId !== undefined &&
-      !/^[A-Za-z0-9_-]{11}$/.test(input.initialVideoId.trim())
-    ) {
-      throw new AppError(400, 'Initial video ID is invalid')
+    const normalizedVideoId = input.initialVideoId?.trim()
+
+    if (!normalizedVideoId || !/^[A-Za-z0-9_-]{11}$/.test(normalizedVideoId)) {
+      throw new AppError(400, 'An initial YouTube video is required when creating a room')
     }
 
     if (
@@ -103,7 +102,7 @@ export class RoomService {
           passcode: hashedPasscode,
           maxMembers: input.maxMembers && input.maxMembers > 0 ? input.maxMembers : 50,
           hostId: hostUserId,
-          currentVideoId: input.initialVideoId?.trim() ?? null,
+          currentVideoId: normalizedVideoId,
           isPlaying: false,
           currentTime: 0.0,
           stateUpdatedAt: new Date(),

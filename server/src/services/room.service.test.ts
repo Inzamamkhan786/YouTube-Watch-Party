@@ -21,6 +21,7 @@ describe('RoomService', () => {
   it('creates a room with the authenticated creator as host', async () => {
     const created = {
       ...room(),
+      currentVideoId: 'dQw4w9WgXcQ',
       host: { id: room().hostId, username: 'host', displayName: 'Host', avatarUrl: null },
       _count: { members: 1 },
     }
@@ -36,7 +37,7 @@ describe('RoomService', () => {
       })
     )
 
-    const result = await service.createRoom(room().hostId, { title: ' Movie Night ' })
+    const result = await service.createRoom(room().hostId, { title: ' Movie Night ', initialVideoId: 'dQw4w9WgXcQ' })
 
     expect(result.roomCode).toMatch(/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/)
     expect(result.currentUserMembership?.role).toBe('HOST')
@@ -77,6 +78,7 @@ describe('RoomService', () => {
   it.each([
     { title: '' },
     { title: 'x' },
+    { title: 'valid' },
     { title: 'valid', initialVideoId: 'not-a-youtube-id' },
   ])('rejects invalid room input %#', async (input) => {
     await expect(service.createRoom(room().hostId, input)).rejects.toMatchObject({ statusCode: 400 })

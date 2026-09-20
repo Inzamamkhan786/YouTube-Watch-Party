@@ -31,15 +31,19 @@ export default function CreateRoomPage() {
       return
     }
 
-    let initialVideoId
-    if (videoInput.trim()) {
-      const parsedId = extractYouTubeVideoId(videoInput)
-      if (!parsedId) {
-        setError('Please enter a valid YouTube video URL or 11-character video ID.')
-        return
-      }
-      initialVideoId = parsedId
+    const trimmedVideoInput = videoInput.trim()
+    if (!trimmedVideoInput) {
+      setError('Please add an initial YouTube video URL or ID before creating the room.')
+      return
     }
+
+    const parsedId = extractYouTubeVideoId(trimmedVideoInput)
+    if (!parsedId) {
+      setError('Please enter a valid YouTube video URL or 11-character video ID.')
+      return
+    }
+
+    const initialVideoId = parsedId
 
     try {
       setLoading(true)
@@ -117,11 +121,12 @@ export default function CreateRoomPage() {
 
           <Input
             id="room-video"
-            label="YouTube Video Link or ID (Optional)"
+            label="YouTube Video Link or ID (Required)"
             placeholder="https://www.youtube.com/watch?v=... or dQw4w9WgXcQ"
             value={videoInput}
             onChange={(e) => setVideoInput(e.target.value)}
-            hint="You can also add or change the video anytime inside the room."
+            hint="This will be the room's starting video and must be set before creation."
+            required
           />
 
           {/* Privacy Toggle */}

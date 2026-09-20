@@ -57,9 +57,7 @@ export const validateRoomIdParam: RequestHandler = (req, _res, next) => {
 
 export const validateCreateRoom: RequestHandler = (req, _res, next) => {
   const body = req.body ?? {}
-  const validVideo = body.initialVideoId === undefined || (
-    typeof body.initialVideoId === 'string' && VIDEO_ID.test(body.initialVideoId.trim())
-  )
+  const validVideo = typeof body.initialVideoId === 'string' && VIDEO_ID.test(body.initialVideoId.trim())
   const validMaxMembers = body.maxMembers === undefined || (
     Number.isInteger(body.maxMembers) && body.maxMembers >= 1 && body.maxMembers <= 1000
   )
@@ -71,7 +69,7 @@ export const validateCreateRoom: RequestHandler = (req, _res, next) => {
     !validVideo ||
     !validMaxMembers
   ) {
-    next(new AppError(400, 'Invalid room details'))
+    next(new AppError(400, 'Initial YouTube video is required when creating a room'))
     return
   }
   next()

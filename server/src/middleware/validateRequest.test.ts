@@ -19,7 +19,8 @@ describe('request validation', () => {
   it.each([
     [{ username: 'x', email: 'bad', password: 'x' }],
     [{ email: 'viewer@example.com', password: 'x'.repeat(129) }],
-    [{ title: 'x', initialVideoId: 'invalid' }],
+    [{ title: 'x' }],
+    [{ title: 'valid', initialVideoId: 'invalid' }],
   ])('rejects invalid request bodies', (body) => {
     const next = vi.fn()
     const handler = 'username' in body ? validateRegister : 'email' in body ? validateLogin : validateCreateRoom
