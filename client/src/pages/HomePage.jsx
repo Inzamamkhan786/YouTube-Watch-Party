@@ -28,7 +28,11 @@ export default function HomePage() {
         {/* Wordmark */}
         <div className="space-y-4">
           <div className="mx-auto max-w-[18rem]">
-            <InteractiveParticleText text="SyncTube" className="h-12 w-full md:h-14" />
+            <InteractiveParticleText
+              key={isAuthenticated ? 'authenticated-home' : 'guest-home'}
+              text="SyncTube"
+              className="h-12 w-full md:h-14"
+            />
           </div>
           <p
             className="text-sm mt-5"
