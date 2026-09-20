@@ -2,7 +2,7 @@
 
 A real-time collaborative web application where multiple users join a shared room and watch YouTube videos together, perfectly in sync. Playback (play, pause, seek, change video) is controlled through a **role-based access control (RBAC)** system and validated by an **authoritative backend**. The app also includes chat, emoji reactions, participant action-approval requests, persistent rooms, and a Redis-ready horizontally scalable WebSocket layer.
 
-> **Live Demo:** `https://<your-frontend>.vercel.app` *(replace with your deployed URL)*
+> **Live Demo:** [https://you-tube-watch-party-theta.vercel.app/](https://you-tube-watch-party-theta.vercel.app/)
 > **Backend Health Check:** `https://<your-backend>.onrender.com/health` *(replace with your deployed URL)*
 
 ---
