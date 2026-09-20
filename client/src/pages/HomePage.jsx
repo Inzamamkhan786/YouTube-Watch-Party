@@ -5,6 +5,7 @@ import { useApi } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../utils/constants'
 import Button from '../components/ui/Button'
+import InteractiveParticleText from '../components/InteractiveParticleText'
 
 export default function HomePage() {
   const { data: health, loading, error, execute } = useApi(healthCheck)
@@ -25,12 +26,12 @@ export default function HomePage() {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-4 py-12">
       <div className="card card-body max-w-md w-full text-center space-y-6">
         {/* Wordmark */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--color-black)' }}>
-            Sync<span style={{ color: 'var(--color-primary)' }}>Tube</span>
-          </h1>
+        <div className="space-y-4">
+          <div className="mx-auto max-w-[18rem]">
+            <InteractiveParticleText text="SyncTube" className="h-12 w-full md:h-14" />
+          </div>
           <p
-            className="mt-2 text-sm"
+            className="text-sm mt-5"
             style={{ color: 'var(--color-black)', opacity: 0.55 }}
           >
             Watch YouTube videos together, perfectly in sync.
@@ -87,12 +88,12 @@ export default function HomePage() {
         ) : (
           <div className="flex flex-col gap-2 pt-1">
             <Link to={ROUTES.LOGIN} className="w-full">
-              <Button variant="primary" className="w-full" id="home-signin-btn">
+              <Button variant="primary" className="h-12 w-full text-base" id="home-signin-btn">
                 Sign In
               </Button>
             </Link>
             <Link to={ROUTES.REGISTER} className="w-full">
-              <Button variant="secondary" className="w-full" id="home-register-btn">
+              <Button variant="secondary" className="h-11 w-full text-base" id="home-register-btn">
                 Create Account
               </Button>
             </Link>
