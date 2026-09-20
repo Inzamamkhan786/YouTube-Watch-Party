@@ -22,7 +22,7 @@ export default function MainLayout() {
     >
       {/* ── Top Navigation ── */}
       <header
-        className="sticky top-0 z-50 flex min-h-14 flex-wrap items-center gap-3 border-b px-4 py-2 sm:px-6"
+        className="sticky top-0 z-50 flex min-h-14 flex-col gap-3 border-b px-3 py-2 sm:flex-row sm:items-center sm:gap-3 sm:px-6"
         style={{
           borderColor: 'var(--color-muted)',
           backgroundColor: 'var(--color-white)',
@@ -40,9 +40,12 @@ export default function MainLayout() {
         </Link>
 
         {/* Auth status and navigation */}
-        <nav className="ml-auto flex min-w-0 items-center gap-2" aria-label="Main navigation">
+        <nav
+          className="ml-0 flex w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto"
+          aria-label="Main navigation"
+        >
           {isAuthenticated && user ? (
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-3">
               <Link to={ROUTES.ROOMS_JOIN}>
                 <Button variant="ghost" size="sm" id="nav-join-room-btn">
                   Join Room
@@ -84,7 +87,7 @@ export default function MainLayout() {
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
               <Link to={ROUTES.LOGIN}>
                 <Button variant="ghost" size="sm" id="nav-login-btn">
                   Sign In

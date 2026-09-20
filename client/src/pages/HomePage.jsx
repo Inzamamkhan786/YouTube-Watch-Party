@@ -23,7 +23,7 @@ export default function HomePage() {
   const isOffline = !loading && Boolean(error)
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-4 py-12">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-3 py-8 sm:px-4 sm:py-12">
       <div className="card card-body max-w-md w-full text-center space-y-6">
         {/* Wordmark */}
         <div className="space-y-4">
