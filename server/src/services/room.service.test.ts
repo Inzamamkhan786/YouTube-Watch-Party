@@ -66,7 +66,7 @@ describe('RoomService', () => {
     )
 
     const result = await service.createRoom(room().hostId, {
-      title: 'YouTube Watch Party',
+      title: 'SyncTube Room',
       initialVideoId: 'dQw4w9WgXcQ',
     })
 

@@ -566,7 +566,7 @@ export default function RoomPage() {
       <div className="flex min-h-[60vh] items-center justify-center px-4">
         <div className="card card-body max-w-md w-full space-y-4 text-center">
           <h2 className="text-lg font-bold" style={{ color: 'var(--color-black)' }}>
-            You left the watch party
+            You left the SyncTube room
           </h2>
           <p className="text-sm" style={{ color: 'var(--color-black)', opacity: 0.65 }}>
             {removedMessage}
@@ -596,7 +596,7 @@ export default function RoomPage() {
             Room Unavailable
           </h2>
           <p className="text-sm" style={{ color: 'var(--color-black)', opacity: 0.6 }}>
-            {error ?? 'Could not find or join the requested watch party.'}
+            {error ?? 'Could not find or join the requested SyncTube room.'}
           </p>
           <div className="pt-2 flex justify-center gap-3">
             <Link to={ROUTES.ROOMS_JOIN}>

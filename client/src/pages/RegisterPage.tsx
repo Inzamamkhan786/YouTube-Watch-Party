@@ -78,7 +78,7 @@ export default function RegisterPage() {
             className="mt-1 text-sm"
             style={{ color: 'var(--color-black)', opacity: 0.6 }}
           >
-            Join WatchParty to start watching together
+            Join SyncTube to start watching together
           </p>
         </div>
 

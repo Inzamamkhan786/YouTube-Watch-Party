@@ -58,7 +58,7 @@ export default function LoginPage() {
             className="mt-1 text-sm"
             style={{ color: 'var(--color-black)', opacity: 0.6 }}
           >
-            Sign in to your WatchParty account
+            Sign in to your SyncTube account
           </p>
         </div>
 

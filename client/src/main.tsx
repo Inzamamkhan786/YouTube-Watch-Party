@@ -5,7 +5,7 @@ import App from './App'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {
-  throw new Error('[WatchParty] Root element #root not found in DOM')
+  throw new Error('[SyncTube] Root element #root not found in DOM')
 }
 
 createRoot(rootElement).render(

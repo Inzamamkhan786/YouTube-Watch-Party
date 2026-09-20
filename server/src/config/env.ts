@@ -28,13 +28,13 @@ export const env = {
   REDIS_URL: optional('REDIS_URL', ''),
   DATABASE_URL: required(
     'DATABASE_URL',
-    'postgresql://postgres:postgres@localhost:5432/watchparty?schema=public'
+    'postgresql://postgres:postgres@localhost:5432/synctube?schema=public'
   ),
 
   // Module 2 — Auth
   JWT_SECRET: required(
     'JWT_SECRET',
-    'watchparty-super-secret-jwt-key-for-development-mode-only'
+    'synctube-super-secret-jwt-key-for-development-mode-only'
   ),
   JWT_EXPIRES_IN: optional('JWT_EXPIRES_IN', '7d'),
   BCRYPT_ROUNDS: parseInt(optional('BCRYPT_ROUNDS', '10'), 10),

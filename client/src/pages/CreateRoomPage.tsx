@@ -71,7 +71,7 @@ export default function CreateRoomPage() {
             className="text-2xl font-bold tracking-tight"
             style={{ color: 'var(--color-black)' }}
           >
-            Create a Watch Party Room
+            Create a SyncTube Room
           </h1>
           <p
             className="mt-1 text-sm"

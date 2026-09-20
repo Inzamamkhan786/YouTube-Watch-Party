@@ -1,6 +1,6 @@
-# 🎬 YouTube Watch Party
+# 🎬 SyncTube
 
-A real-time collaborative web application where multiple users join a shared room and watch YouTube videos together, perfectly in sync. Playback (play, pause, seek, change video) is controlled through a **role-based access control (RBAC)** system and validated by an **authoritative backend**. The app also includes chat, emoji reactions, participant action-approval requests, persistent rooms, and a Redis-ready horizontally scalable WebSocket layer.
+SyncTube is a real-time collaborative web application where multiple users join a shared room and watch YouTube videos together, perfectly in sync. Playback (play, pause, seek, change video) is controlled through a **role-based access control (RBAC)** system and validated by an **authoritative backend**. The app also includes chat, emoji reactions, participant action-approval requests, persistent rooms, and a Redis-ready horizontally scalable WebSocket layer.
 
 > **Live Demo:** [https://you-tube-watch-party-theta.vercel.app/](https://you-tube-watch-party-theta.vercel.app/)
 > **Backend Health Check:** `https://<your-backend>.onrender.com/health` *(replace with your deployed URL)*
@@ -42,7 +42,7 @@ A real-time collaborative web application where multiple users join a shared roo
 
 ## 1. Project Overview
 
-YouTube Watch Party lets a group of users watch the same YouTube video at the same time, no matter where they are.
+SyncTube lets a group of users watch the same YouTube video at the same time, no matter where they are.
 
 - A user registers, logs in, and creates a **room**. The creator automatically becomes the **Host**.
 - Others join using a short **room code** or a shareable **room link** and become **Participants**.
@@ -719,7 +719,7 @@ docker-compose up -d
 
 | Variable | Description | Example |
 |---|---|---|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/watchparty` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/synctube` |
 | `JWT_SECRET` | Secret used to sign JWTs (use a long random value) | `change-me` |
 | `FRONTEND_URL` | Allowed origin for CORS and Socket.IO CORS | `http://localhost:5173` |
 | `REDIS_URL` | *(Optional)* Redis connection string for multi-instance scaling | `redis://localhost:6379` |

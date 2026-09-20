@@ -1,4 +1,4 @@
-# Implementation Model: YouTube Watch Party
+# Implementation Model: SyncTube
 
 This document is the compact engineering summary of the work completed so far. It is designed to be read quickly by a human or an AI without needing to inspect the entire codebase.
 

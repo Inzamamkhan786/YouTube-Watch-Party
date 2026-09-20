@@ -64,7 +64,7 @@ export default function JoinRoomPage() {
             className="text-2xl font-bold tracking-tight"
             style={{ color: 'var(--color-black)' }}
           >
-            Join a Watch Party
+            Join SyncTube
           </h1>
           <p
             className="mt-1 text-sm"
@@ -131,7 +131,7 @@ export default function JoinRoomPage() {
 
         <div className="text-center text-xs pt-2">
           <span style={{ color: 'var(--color-black)', opacity: 0.6 }}>
-            Want to host your own watch party?{' '}
+            Want to host your own SyncTube room?{' '}
           </span>
           <Link
             to={ROUTES.ROOMS_CREATE}

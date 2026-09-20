@@ -27,7 +27,7 @@ export default function HomePage() {
         {/* Wordmark */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--color-black)' }}>
-            Watch<span style={{ color: 'var(--color-primary)' }}>Party</span>
+            Sync<span style={{ color: 'var(--color-primary)' }}>Tube</span>
           </h1>
           <p
             className="mt-2 text-sm"
@@ -74,7 +74,7 @@ export default function HomePage() {
             <div className="flex flex-col gap-2">
               <Link to={ROUTES.ROOMS_CREATE} className="w-full">
                 <Button variant="primary" className="w-full" id="home-create-room-btn">
-                  + Create a Watch Party
+                  + Create a SyncTube Room
                 </Button>
               </Link>
               <Link to={ROUTES.ROOMS_JOIN} className="w-full">
