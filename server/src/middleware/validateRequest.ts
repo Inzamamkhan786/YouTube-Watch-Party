@@ -9,16 +9,21 @@ const USERNAME = /^[a-zA-Z0-9_-]{3,30}$/
 
 export const validateRegister: RequestHandler = (req, _res, next) => {
   const { username, email, password } = req.body ?? {}
+  const trimmedUsername = typeof username === 'string' ? username.trim() : ''
+
   if (
     typeof username !== 'string' ||
-    !USERNAME.test(username.trim()) ||
+    trimmedUsername.length < 3 ||
+    trimmedUsername.length > 30 ||
+    /\s/.test(trimmedUsername) ||
+    !USERNAME.test(trimmedUsername) ||
     typeof email !== 'string' ||
     !EMAIL.test(email.trim()) ||
     typeof password !== 'string' ||
     password.length < 6 ||
     password.length > 128
   ) {
-    next(new AppError(400, 'Invalid registration details'))
+    next(new AppError(400, 'Username cannot contain spaces and can only use letters, numbers, underscores, or hyphens'))
     return
   }
   next()

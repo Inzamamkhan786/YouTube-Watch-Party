@@ -34,6 +34,16 @@ export default function RegisterPage() {
       return
     }
 
+    if (/\s/.test(trimmedUser)) {
+      setFormError('Username cannot contain spaces. Use letters, numbers, underscores, or hyphens only.')
+      return
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(trimmedUser)) {
+      setFormError('Username can only contain letters, numbers, underscores, or hyphens.')
+      return
+    }
+
     if (password.length < 6) {
       setFormError('Password must be at least 6 characters long.')
       return
