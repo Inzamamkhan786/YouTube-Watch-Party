@@ -2,12 +2,13 @@ import { useEffect, useRef } from 'react'
 
 function hexToRgba(hex, alpha) {
   const value = hex.replace('#', '')
-  const normalized = value.length === 3
-    ? value
-        .split('')
-        .map((char) => char + char)
-        .join('')
-    : value
+  const normalized =
+    value.length === 3
+      ? value
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : value
 
   const number = Number.parseInt(normalized, 16)
   const red = (number >> 16) & 255
@@ -23,7 +24,7 @@ export default function InteractiveParticleText({
 }) {
   const wrapperRef = useRef(null)
   const canvasRef = useRef(null)
-  const pointerRef = useRef({ x: 0, y: 0, active: false })
+  const pointerRef = useRef({ x: -1000, y: -1000, active: false })
   const particlesRef = useRef([])
   const animationRef = useRef(null)
 
@@ -35,52 +36,77 @@ export default function InteractiveParticleText({
     const context = canvas.getContext('2d')
     if (!context) return
 
-    const isFinePointer = window.matchMedia('(pointer: fine)').matches
     const pointerState = pointerRef.current
 
     const rebuildParticles = () => {
       const rect = wrapper.getBoundingClientRect()
-      const width = Math.max(rect.width, 120)
-      const height = Math.max(rect.height, 80)
-      const devicePixelRatio = window.devicePixelRatio || 1
+      // Responsive width and height matching container
+      const width = Math.floor(rect.width) || 280
+      const height = Math.floor(rect.height) || 64
+      const dpr = Math.min(window.devicePixelRatio || 1, 2.5)
 
-      canvas.width = width * devicePixelRatio
-      canvas.height = height * devicePixelRatio
+      // Physical canvas dimensions (retina/HiDPI ready)
+      canvas.width = Math.floor(width * dpr)
+      canvas.height = Math.floor(height * dpr)
       canvas.style.width = `${width}px`
       canvas.style.height = `${height}px`
-      context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0)
+      context.setTransform(dpr, 0, 0, dpr, 0, 0)
 
+      // Logical offscreen canvas for sampling exact pixel coordinates
       const offscreen = document.createElement('canvas')
-      offscreen.width = width * devicePixelRatio
-      offscreen.height = height * devicePixelRatio
+      offscreen.width = width
+      offscreen.height = height
       const offscreenContext = offscreen.getContext('2d')
       if (!offscreenContext) return
 
-      offscreenContext.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0)
       offscreenContext.clearRect(0, 0, width, height)
       offscreenContext.textAlign = 'left'
       offscreenContext.textBaseline = 'middle'
 
-      const fontSize = Math.max(Math.min(width * 0.13, 64), 18)
-      offscreenContext.font = `900 ${fontSize}px Segoe UI, Inter, Arial, sans-serif`
+      // Exact Segoe UI font stack matching the brand wordmark
+      const fontStack = 'Segoe UI, Inter, Arial, sans-serif'
 
-      const syncText = 'Sync'
-      const tubeText = 'Tube'
-      const syncWidth = offscreenContext.measureText(syncText).width
-      const tubeWidth = offscreenContext.measureText(tubeText).width
-      const totalWidth = syncWidth + tubeWidth + 10
-      const startX = Math.max((width - totalWidth) / 2, 14)
-      const tubeStartX = startX + syncWidth + 10
-      const centerY = height / 2 - 2
+      // Dynamically calculate font size to comfortably fill the container
+      // while preventing text clipping on mobile screens
+      const testSize = 60
+      offscreenContext.font = `900 ${testSize}px ${fontStack}`
+      const testSyncW = offscreenContext.measureText('Sync').width
+      const testTubeW = offscreenContext.measureText('Tube').width
+      const testGap = 12
+      const testTotalW = testSyncW + testTubeW + testGap
+      const testCapH = testSize * 0.76
 
+      // Scale to fit available width and height with safe padding
+      const scaleW = (width * 0.9) / testTotalW
+      const scaleH = (height * 0.8) / testCapH
+      const scale = Math.min(scaleW, scaleH)
+      const fontSize = Math.max(Math.min(Math.floor(testSize * scale), 66), 28)
+
+      offscreenContext.font = `900 ${fontSize}px ${fontStack}`
+      const syncWidth = offscreenContext.measureText('Sync').width
+      const tubeWidth = offscreenContext.measureText('Tube').width
+      const gap = Math.max(Math.round(fontSize * 0.18), 8)
+      const totalWidth = syncWidth + tubeWidth + gap
+
+      // Center text horizontally and vertically
+      const startX = Math.max(Math.round((width - totalWidth) / 2), 4)
+      const tubeStartX = startX + syncWidth + gap
+      const centerY = Math.round(height / 2) - 1
+
+      // Render "Sync" in deep black and "Tube" in vibrant red
       offscreenContext.fillStyle = '#0f0f0f'
-      offscreenContext.fillText(syncText, startX, centerY)
+      offscreenContext.fillText('Sync', startX, centerY)
       offscreenContext.fillStyle = '#ff2e4c'
-      offscreenContext.fillText(tubeText, tubeStartX, centerY)
+      offscreenContext.fillText('Tube', tubeStartX, centerY)
 
+      // Sample pixels
       const imageData = offscreenContext.getImageData(0, 0, width, height).data
       const particles = []
-      const step = width < 420 ? 3 : 4
+
+      // Step and particle sizing matching the distinct matrix-dot particle style
+      const step = fontSize < 44 ? 3 : 4
+      const baseRadius = Math.max(1.3, fontSize * 0.026)
+      const accentRadius = baseRadius * 1.35
 
       for (let y = 0; y < height; y += step) {
         for (let x = 0; x < width; x += step) {
@@ -91,11 +117,15 @@ export default function InteractiveParticleText({
           const red = imageData[index]
           const green = imageData[index + 1]
           const blue = imageData[index + 2]
-          const isRed = red > 180 && green < 120 && blue < 120
-          const isBlack = red < 90 && green < 90 && blue < 90
-          const isAccent = (x + y) % 9 === 0 || (x + y) % 13 === 0
+
+          const isRed = red > 170 && green < 120 && blue < 120
+          const isBlack = red < 95 && green < 95 && blue < 95
 
           if (!isRed && !isBlack) continue
+
+          const isAccent = (x + y) % 9 === 0 || (x + y) % 13 === 0
+          const colorHex = isRed ? '#ff2e4c' : '#0f0f0f'
+          const particleColor = hexToRgba(colorHex, isAccent ? 0.95 : 0.8)
 
           particles.push({
             x: x + (Math.random() - 0.5) * 0.35,
@@ -104,9 +134,9 @@ export default function InteractiveParticleText({
             baseY: y,
             vx: 0,
             vy: 0,
+            radius: isAccent ? accentRadius : baseRadius,
             seed: Math.random() * Math.PI * 2,
-            accent: isAccent,
-            color: isRed ? '#ff2e4c' : '#0f0f0f',
+            color: particleColor,
           })
         }
       }
@@ -115,121 +145,148 @@ export default function InteractiveParticleText({
     }
 
     const draw = (timestamp) => {
-      const width = canvas.width / (window.devicePixelRatio || 1)
-      const height = canvas.height / (window.devicePixelRatio || 1)
+      const rect = wrapper.getBoundingClientRect()
+      const width = Math.floor(rect.width) || 280
+      const height = Math.floor(rect.height) || 64
+
       context.clearRect(0, 0, width, height)
 
-      if (pointerState.active && isFinePointer) {
+      // Pointer glow effect
+      if (pointerState.active) {
+        const glowRadius = Math.max(50, Math.min(width * 0.24, 100))
         const glow = context.createRadialGradient(
           pointerState.x,
           pointerState.y,
           0,
           pointerState.x,
           pointerState.y,
-          110
+          glowRadius
         )
-        glow.addColorStop(0, 'rgba(255, 46, 76, 0.28)')
-        glow.addColorStop(0.25, 'rgba(255, 46, 76, 0.12)')
+        glow.addColorStop(0, 'rgba(255, 46, 76, 0.26)')
+        glow.addColorStop(0.3, 'rgba(255, 46, 76, 0.1)')
         glow.addColorStop(1, 'rgba(255, 46, 76, 0)')
+
         context.fillStyle = glow
         context.beginPath()
-        context.arc(pointerState.x, pointerState.y, 110, 0, Math.PI * 2)
+        context.arc(pointerState.x, pointerState.y, glowRadius, 0, Math.PI * 2)
         context.fill()
 
         context.fillStyle = 'rgba(255, 46, 76, 0.9)'
         context.beginPath()
-        context.arc(pointerState.x, pointerState.y, 3.3, 0, Math.PI * 2)
+        context.arc(pointerState.x, pointerState.y, 3.2, 0, Math.PI * 2)
         context.fill()
       }
 
       const particles = particlesRef.current
+      const interactDist = Math.max(55, Math.min(width * 0.24, 95))
 
-      for (const particle of particles) {
-        let dx = 0
-        let dy = 0
+      for (let i = 0; i < particles.length; i++) {
+        const particle = particles[i]
 
-        if (isFinePointer && pointerState.active) {
-          dx = pointerState.x - particle.x
-          dy = pointerState.y - particle.y
+        // Pointer repulsion (mouse or touch)
+        if (pointerState.active) {
+          const dx = pointerState.x - particle.x
+          const dy = pointerState.y - particle.y
           const distance = Math.hypot(dx, dy) || 1
 
-          if (distance < 90) {
-            const force = (1 - distance / 90) * 1.8
-            particle.vx -= (dx / distance) * force * 1.8
-            particle.vy -= (dy / distance) * force * 1.8
+          if (distance < interactDist) {
+            const force = (1 - distance / interactDist) * 1.9
+            particle.vx -= (dx / distance) * force * 1.9
+            particle.vy -= (dy / distance) * force * 1.9
           }
         }
 
-        if (!isFinePointer || !pointerState.active) {
-          const driftX = Math.sin((timestamp * 0.0013) + particle.seed) * 1.2
-          const driftY = Math.cos((timestamp * 0.0011) + particle.seed) * 1.1
-          particle.vx += (particle.baseX + driftX - particle.x) * 0.02
-          particle.vy += (particle.baseY + driftY - particle.y) * 0.02
-        }
+        // Ambient organic drift
+        const driftX = Math.sin(timestamp * 0.0013 + particle.seed) * 1.1
+        const driftY = Math.cos(timestamp * 0.0011 + particle.seed) * 0.9
+        particle.vx += (particle.baseX + driftX - particle.x) * 0.02
+        particle.vy += (particle.baseY + driftY - particle.y) * 0.02
 
+        // Snap back spring force
         particle.vx += (particle.baseX - particle.x) * 0.08
         particle.vy += (particle.baseY - particle.y) * 0.08
 
+        // Physics integration
         particle.x += particle.vx
         particle.y += particle.vy
-        particle.vx *= 0.72
-        particle.vy *= 0.72
+        particle.vx *= 0.73
+        particle.vy *= 0.73
 
-        const alpha = particle.accent ? 0.95 : 0.8
-        const color = particle.color
-        context.fillStyle = hexToRgba(color, alpha)
+        // Draw particle dot
+        context.fillStyle = particle.color
         context.beginPath()
-        context.arc(particle.x, particle.y, particle.accent ? 1.9 : 1.4, 0, Math.PI * 2)
+        context.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2)
         context.fill()
       }
 
       animationRef.current = window.requestAnimationFrame(draw)
     }
 
-    const handlePointerMove = (event) => {
-      const rect = wrapper.getBoundingClientRect()
-      pointerState.x = event.clientX - rect.left
-      pointerState.y = event.clientY - rect.top
+    const updatePointer = (clientX, clientY) => {
+      const rect = canvas.getBoundingClientRect()
+      pointerState.x = clientX - rect.left
+      pointerState.y = clientY - rect.top
       pointerState.active = true
     }
 
-    const handlePointerLeave = () => {
+    const handlePointerMove = (e) => updatePointer(e.clientX, e.clientY)
+    const handlePointerDown = (e) => updatePointer(e.clientX, e.clientY)
+    const handlePointerUp = () => {
       pointerState.active = false
     }
-
-    const handleResize = () => {
-      rebuildParticles()
+    const handlePointerLeave = () => {
+      pointerState.active = false
     }
 
     rebuildParticles()
     animationRef.current = window.requestAnimationFrame(draw)
 
-    if (isFinePointer) {
-      wrapper.addEventListener('pointermove', handlePointerMove)
-      wrapper.addEventListener('pointerleave', handlePointerLeave)
+    if (document.fonts?.ready) {
+      document.fonts.ready
+        .then(() => rebuildParticles())
+        .catch(() => {})
     }
 
-    window.addEventListener('resize', handleResize)
+    let lastW = 0
+    let lastH = 0
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = Math.floor(entry.contentRect.width)
+        const h = Math.floor(entry.contentRect.height)
+        if (w > 0 && h > 0 && (w !== lastW || h !== lastH)) {
+          lastW = w
+          lastH = h
+          rebuildParticles()
+        }
+      }
+    })
+    resizeObserver.observe(wrapper)
+
+    wrapper.addEventListener('pointermove', handlePointerMove, { passive: true })
+    wrapper.addEventListener('pointerdown', handlePointerDown, { passive: true })
+    wrapper.addEventListener('pointerup', handlePointerUp, { passive: true })
+    wrapper.addEventListener('pointercancel', handlePointerUp, { passive: true })
+    wrapper.addEventListener('pointerleave', handlePointerLeave, { passive: true })
 
     return () => {
       if (animationRef.current) {
         window.cancelAnimationFrame(animationRef.current)
       }
-
-      if (isFinePointer) {
-        wrapper.removeEventListener('pointermove', handlePointerMove)
-        wrapper.removeEventListener('pointerleave', handlePointerLeave)
-      }
-
-      window.removeEventListener('resize', handleResize)
+      resizeObserver.disconnect()
+      wrapper.removeEventListener('pointermove', handlePointerMove)
+      wrapper.removeEventListener('pointerdown', handlePointerDown)
+      wrapper.removeEventListener('pointerup', handlePointerUp)
+      wrapper.removeEventListener('pointercancel', handlePointerUp)
+      wrapper.removeEventListener('pointerleave', handlePointerLeave)
     }
   }, [text])
 
   return (
     <div
       ref={wrapperRef}
-      className={`relative block select-none ${className}`}
+      className={`relative block select-none touch-pan-y ${className}`}
       aria-label={text}
+      style={{ touchAction: 'pan-y' }}
     >
       <canvas
         ref={canvasRef}

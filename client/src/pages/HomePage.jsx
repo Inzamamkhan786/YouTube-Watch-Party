@@ -26,16 +26,16 @@ export default function HomePage() {
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-3 py-8 sm:px-4 sm:py-12">
       <div className="card card-body max-w-md w-full text-center space-y-6">
         {/* Wordmark */}
-        <div className="space-y-4">
-          <div className="mx-auto w-full max-w-[7rem] sm:max-w-[10rem] md:max-w-[18rem]">
+        <div className="space-y-2 sm:space-y-3">
+          <div className="mx-auto w-full max-w-[17rem] sm:max-w-[20rem] md:max-w-[23rem]">
             <InteractiveParticleText
               key={isAuthenticated ? 'authenticated-home' : 'guest-home'}
               text="SyncTube"
-              className="h-8 w-full sm:h-10 md:h-14"
+              className="h-14 w-full sm:h-16 md:h-20"
             />
           </div>
           <p
-            className="text-sm mt-5"
+            className="text-xs sm:text-sm"
             style={{ color: 'var(--color-black)', opacity: 0.55 }}
           >
             Watch YouTube videos together, perfectly in sync.

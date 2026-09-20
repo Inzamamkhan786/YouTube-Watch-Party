@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../utils/constants'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+import InteractiveParticleText from '../components/InteractiveParticleText'
 
 export default function RegisterPage() {
   const { register, error: authError, clearError } = useAuth()
@@ -74,22 +75,30 @@ export default function RegisterPage() {
   const displayError = formError ?? authError
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-4 py-12">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-3 py-8 sm:px-4 sm:py-12">
       <div className="card card-body max-w-md w-full space-y-6">
         {/* Header */}
-        <div className="text-center">
-          <h1
-            className="text-2xl font-bold tracking-tight"
-            style={{ color: 'var(--color-black)' }}
-          >
-            Create Account
-          </h1>
-          <p
-            className="mt-1 text-sm"
-            style={{ color: 'var(--color-black)', opacity: 0.6 }}
-          >
-            Join SyncTube to start watching together
-          </p>
+        <div className="text-center space-y-3">
+          <div className="mx-auto w-full max-w-[16rem] sm:max-w-[19rem] md:max-w-[22rem]">
+            <InteractiveParticleText
+              text="SyncTube"
+              className="h-14 w-full sm:h-16 md:h-18"
+            />
+          </div>
+          <div>
+            <h1
+              className="text-2xl font-bold tracking-tight"
+              style={{ color: 'var(--color-black)' }}
+            >
+              Create Account
+            </h1>
+            <p
+              className="mt-1 text-sm"
+              style={{ color: 'var(--color-black)', opacity: 0.6 }}
+            >
+              Join SyncTube to start watching together
+            </p>
+          </div>
         </div>
 
         {/* Error Alert */}
