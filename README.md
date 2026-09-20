@@ -5,7 +5,7 @@ SyncTube is a real-time collaborative web application where multiple users join 
 
 - 🌐 **Live Link:** [SyncTube](https://you-tube-watch-party-theta.vercel.app/)
 - 🎥 **Demo Video:** [Watch the SyncTube Demo](https://drive.google.com/file/d/1GPvfMgj98dacDt61nymFQ-4STLCBu7Gf/view?usp=drivesdk)
-- ⚙️ **Backend Health Check:** `https://<your-backend>.onrender.com/health`
+- ⚙️ **Backend Health Check:** [Check Backend Health](https://youtube-watch-party-8osi.onrender.com/health)
 
 ---
 
