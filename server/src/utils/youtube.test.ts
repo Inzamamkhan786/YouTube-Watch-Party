@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractYouTubeVideoId, isValidYouTubeInput, validVideoId } from '../../../client/src/utils/youtube'
+import { extractYouTubeVideoId, isValidYouTubeInput, validVideoId } from './youtube'
 
 describe('YouTube Video URL Parsing & Validation', () => {
   const EXPECTED_ID = 'dQw4w9WgXcQ'
