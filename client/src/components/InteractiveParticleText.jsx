@@ -77,10 +77,10 @@ export default function InteractiveParticleText({
       const testCapH = testSize * 0.76
 
       // Scale to fit available width and height with safe padding
-      const scaleW = (width * 0.9) / testTotalW
-      const scaleH = (height * 0.8) / testCapH
+      const scaleW = (width * 0.92) / testTotalW
+      const scaleH = (height * 0.82) / testCapH
       const scale = Math.min(scaleW, scaleH)
-      const fontSize = Math.max(Math.min(Math.floor(testSize * scale), 66), 28)
+      const fontSize = Math.max(Math.min(Math.floor(testSize * scale), 68), 32)
 
       offscreenContext.font = `900 ${fontSize}px ${fontStack}`
       const syncWidth = offscreenContext.measureText('Sync').width
@@ -93,45 +93,48 @@ export default function InteractiveParticleText({
       const tubeStartX = startX + syncWidth + gap
       const centerY = Math.round(height / 2) - 1
 
-      // Render "Sync" in deep black and "Tube" in vibrant red
-      offscreenContext.fillStyle = '#0f0f0f'
+      // Render "Sync" in pure pitch black and "Tube" in saturated YouTube red
+      offscreenContext.fillStyle = '#000000'
       offscreenContext.fillText('Sync', startX, centerY)
-      offscreenContext.fillStyle = '#ff2e4c'
+      offscreenContext.fillStyle = '#ff0033'
       offscreenContext.fillText('Tube', tubeStartX, centerY)
 
       // Sample pixels
       const imageData = offscreenContext.getImageData(0, 0, width, height).data
       const particles = []
 
-      // Step and particle sizing matching the distinct matrix-dot particle style
-      const step = fontSize < 44 ? 3 : 4
-      const baseRadius = Math.max(1.3, fontSize * 0.026)
-      const accentRadius = baseRadius * 1.35
+      // Ultra-dense particle sampling across all screen sizes
+      const step = fontSize < 44 ? 1.8 : 2.2
+      const baseRadius = fontSize < 44 ? 1.55 : Math.max(1.6, fontSize * 0.032)
+      const accentRadius = baseRadius * 1.25
 
       for (let y = 0; y < height; y += step) {
+        const py = Math.floor(y)
         for (let x = 0; x < width; x += step) {
-          const index = (y * width + x) * 4
+          const px = Math.floor(x)
+          const index = (py * width + px) * 4
           const alpha = imageData[index + 3]
-          if (alpha < 30) continue
+          if (alpha < 18) continue
 
           const red = imageData[index]
           const green = imageData[index + 1]
           const blue = imageData[index + 2]
 
-          const isRed = red > 170 && green < 120 && blue < 120
-          const isBlack = red < 95 && green < 95 && blue < 95
+          const isRed = red > 150 && green < 130 && blue < 130
+          const isBlack = red < 120 && green < 120 && blue < 120
 
           if (!isRed && !isBlack) continue
 
-          const isAccent = (x + y) % 9 === 0 || (x + y) % 13 === 0
-          const colorHex = isRed ? '#ff2e4c' : '#0f0f0f'
-          const particleColor = hexToRgba(colorHex, isAccent ? 0.95 : 0.8)
+          const isAccent = (px + py) % 8 === 0 || (px + py) % 12 === 0
+          const colorHex = isRed ? '#ff0033' : '#000000'
+          // Pure 100% solid opacity for maximum darkness and contrast
+          const particleColor = hexToRgba(colorHex, 1.0)
 
           particles.push({
-            x: x + (Math.random() - 0.5) * 0.35,
-            y: y + (Math.random() - 0.5) * 0.35,
-            baseX: x,
-            baseY: y,
+            x: px + (Math.random() - 0.5) * 0.25,
+            y: py + (Math.random() - 0.5) * 0.25,
+            baseX: px,
+            baseY: py,
             vx: 0,
             vy: 0,
             radius: isAccent ? accentRadius : baseRadius,
@@ -196,9 +199,9 @@ export default function InteractiveParticleText({
           }
         }
 
-        // Ambient organic drift
-        const driftX = Math.sin(timestamp * 0.0013 + particle.seed) * 1.1
-        const driftY = Math.cos(timestamp * 0.0011 + particle.seed) * 0.9
+        // Subtle ambient organic drift
+        const driftX = Math.sin(timestamp * 0.0013 + particle.seed) * 0.5
+        const driftY = Math.cos(timestamp * 0.0011 + particle.seed) * 0.4
         particle.vx += (particle.baseX + driftX - particle.x) * 0.02
         particle.vy += (particle.baseY + driftY - particle.y) * 0.02
 

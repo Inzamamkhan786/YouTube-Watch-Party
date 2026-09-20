@@ -782,66 +782,72 @@ export default function RoomPage() {
                 return (
                   <div
                     key={member.id}
-                    className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3"
+                    className="py-3 first:pt-0 last:pb-0 flex flex-col gap-2"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {/* Avatar */}
-                      <span
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                        style={{
-                          backgroundColor:
-                            member.role === 'HOST'
-                              ? 'var(--color-primary-soft)'
-                              : member.role === 'MODERATOR'
-                              ? 'var(--color-muted)'
-                              : 'var(--color-muted)',
-                          color:
-                            member.role === 'HOST'
-                              ? 'var(--color-primary)'
-                              : member.role === 'MODERATOR'
-                              ? 'var(--color-blue)'
-                              : 'var(--color-black)',
-                        }}
-                      >
-                        {name.charAt(0).toUpperCase()}
-                      </span>
-
-                      {/* Name & Tag */}
-                      <div className="truncate">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <span
-                            className="text-xs font-semibold truncate"
-                            style={{ color: 'var(--color-black)' }}
-                          >
-                            {name}
-                          </span>
-                          {isMe && (
-                            <span
-                              className="text-[10px] font-bold uppercase px-1 rounded"
-                              style={{
-                                backgroundColor: 'var(--color-muted)',
-                                color: 'var(--color-black)',
-                                opacity: 0.6,
-                              }}
-                            >
-                              You
-                            </span>
-                          )}
-                        </div>
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {/* Avatar */}
                         <span
-                          className="text-[11px] block truncate"
-                          style={{ color: 'var(--color-black)', opacity: 0.5 }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          style={{
+                            backgroundColor:
+                              member.role === 'HOST'
+                                ? 'var(--color-primary-soft)'
+                                : member.role === 'MODERATOR'
+                                ? 'var(--color-muted)'
+                                : 'var(--color-muted)',
+                            color:
+                              member.role === 'HOST'
+                                ? 'var(--color-primary)'
+                                : member.role === 'MODERATOR'
+                                ? 'var(--color-blue)'
+                                : 'var(--color-black)',
+                          }}
                         >
-                          @{member.user.username}
+                          {name.charAt(0).toUpperCase()}
                         </span>
+
+                        {/* Name & Tag */}
+                        <div className="truncate">
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span
+                              className="text-xs font-semibold truncate"
+                              style={{ color: 'var(--color-black)' }}
+                            >
+                              {name}
+                            </span>
+                            {isMe && (
+                              <span
+                                className="text-[10px] font-bold uppercase px-1 rounded"
+                                style={{
+                                  backgroundColor: 'var(--color-muted)',
+                                  color: 'var(--color-black)',
+                                  opacity: 0.6,
+                                }}
+                              >
+                                You
+                              </span>
+                            )}
+                          </div>
+                          <span
+                            className="text-[11px] block truncate"
+                            style={{ color: 'var(--color-black)', opacity: 0.5 }}
+                          >
+                            @{member.user.username}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Role Badge */}
+                      <div className="flex-shrink-0">
+                        <RoleBadge role={member.role} />
                       </div>
                     </div>
 
-                    {/* Role Badge */}
-                    <div className="flex flex-shrink-0 items-center gap-2">
-                      <RoleBadge role={member.role} />
-                      {currentUserRole === 'HOST' && !isMe && member.role !== 'HOST' && (
-                        <div className="flex items-center gap-1">
+                    {/* Host Action Strip (Role selector, Transfer, Remove) */}
+                    {currentUserRole === 'HOST' && !isMe && member.role !== 'HOST' && (
+                      <div className="flex items-center justify-between gap-1.5 pl-10 sm:justify-end">
+                        <div className="flex items-center gap-1.5 min-w-0">
                           <select
                             aria-label={`Change role for ${name}`}
                             value={member.role}
@@ -855,17 +861,21 @@ export default function RoomPage() {
                                 handleAssignRole(member.user.id, nextRole)
                               }
                             }}
-                            className="rounded border px-1 py-1 text-[10px]"
+                            className="rounded border px-2 py-1 text-[11px] bg-white text-black cursor-pointer"
                             style={{ borderColor: 'var(--color-muted)' }}
                           >
                             <option value="PARTICIPANT">Participant</option>
                             <option value="VIEWER">Viewer</option>
                             <option value="MODERATOR">Moderator</option>
                           </select>
+                        </div>
+
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
+                            className="text-[11px] px-2 py-1 h-7"
                             onClick={() => handleTransferHost(member.user.id)}
                             title={`Transfer host to ${name}`}
                           >
@@ -875,14 +885,15 @@ export default function RoomPage() {
                             type="button"
                             variant="ghost"
                             size="sm"
+                            className="text-[11px] px-2 py-1 h-7 text-red-500 hover:text-red-600 hover:bg-red-50"
                             onClick={() => handleRemoveParticipant(member.user.id)}
                             title={`Remove ${name}`}
                           >
                             Remove
                           </Button>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )
               })}
