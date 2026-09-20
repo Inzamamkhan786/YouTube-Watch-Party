@@ -1,8 +1,6 @@
-import { isDev } from '../config/env'
+const { isDev } = require('../config/env')
 
-type LogLevel = 'info' | 'warn' | 'error' | 'debug'
-
-const LEVEL_COLORS: Record<LogLevel, string> = {
+const LEVEL_COLORS = {
   info:  '\x1b[36m',  // cyan
   warn:  '\x1b[33m',  // yellow
   error: '\x1b[31m',  // red
@@ -11,11 +9,11 @@ const LEVEL_COLORS: Record<LogLevel, string> = {
 const RESET = '\x1b[0m'
 const DIM   = '\x1b[90m'
 
-function timestamp(): string {
+function timestamp() {
   return new Date().toISOString()
 }
 
-function write(level: LogLevel, message: string, meta?: unknown): void {
+function write(level, message, meta) {
   if (level === 'debug' && !isDev) return
 
   const color  = LEVEL_COLORS[level]
@@ -41,9 +39,11 @@ function write(level: LogLevel, message: string, meta?: unknown): void {
  * Lightweight structured logger.
  * In production, debug logs are suppressed automatically.
  */
-export const logger = {
-  info:  (msg: string, meta?: unknown) => write('info',  msg, meta),
-  warn:  (msg: string, meta?: unknown) => write('warn',  msg, meta),
-  error: (msg: string, meta?: unknown) => write('error', msg, meta),
-  debug: (msg: string, meta?: unknown) => write('debug', msg, meta),
+const logger = {
+  info:  (msg, meta) => write('info',  msg, meta),
+  warn:  (msg, meta) => write('warn',  msg, meta),
+  error: (msg, meta) => write('error', msg, meta),
+  debug: (msg, meta) => write('debug', msg, meta),
 }
+
+module.exports = { logger }

@@ -1,16 +1,8 @@
-import { PrismaClient } from '@prisma/client'
-import { isDev } from '../config/env'
-import { logger } from '../utils/logger'
+const { PrismaClient } = require('@prisma/client')
+const { isDev } = require('../config/env')
+const { logger } = require('../utils/logger')
 
-/**
- * Global declaration to preserve PrismaClient instance across hot-reloads in development.
- */
-declare global {
-  // eslint-disable-next-line no-var
-  var __globalPrisma: PrismaClient | undefined
-}
-
-export const prisma: PrismaClient =
+const prisma =
   globalThis.__globalPrisma ??
   new PrismaClient({
     log: isDev
@@ -25,9 +17,7 @@ export const prisma: PrismaClient =
 if (isDev) {
   globalThis.__globalPrisma = prisma
 
-  // Optional query event logging in dev mode
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(prisma as any).$on?.('query', (e: { query: string; duration: number }) => {
+  prisma.$on?.('query', (e) => {
     logger.debug(`[Prisma Query] (${e.duration}ms) ${e.query}`)
   })
 }
@@ -35,7 +25,7 @@ if (isDev) {
 /**
  * Connect to the database and verify connectivity.
  */
-export async function connectDatabase(): Promise<void> {
+async function connectDatabase() {
   try {
     await prisma.$connect()
     logger.info('Connected to PostgreSQL database successfully')
@@ -48,7 +38,7 @@ export async function connectDatabase(): Promise<void> {
 /**
  * Disconnect from the database cleanly.
  */
-export async function disconnectDatabase(): Promise<void> {
+async function disconnectDatabase() {
   try {
     await prisma.$disconnect()
     logger.info('Disconnected from PostgreSQL database')
@@ -61,3 +51,5 @@ export async function disconnectDatabase(): Promise<void> {
 process.on('beforeExit', async () => {
   await disconnectDatabase()
 })
+
+module.exports = { prisma, connectDatabase, disconnectDatabase }

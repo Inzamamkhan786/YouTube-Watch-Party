@@ -1,16 +1,12 @@
-import jwt, { type SignOptions } from 'jsonwebtoken'
-import { env } from '../config/env'
-
-export interface JwtUserPayload {
-  userId: string
-}
+const jwt = require('jsonwebtoken')
+const { env } = require('../config/env')
 
 /**
  * Signs a JWT token containing the user ID.
  */
-export function signToken(payload: JwtUserPayload): string {
-  const options: SignOptions = {
-    expiresIn: env.JWT_EXPIRES_IN as SignOptions['expiresIn'],
+function signToken(payload) {
+  const options = {
+    expiresIn: env.JWT_EXPIRES_IN,
   }
   return jwt.sign(payload, env.JWT_SECRET, { ...options, algorithm: 'HS256' })
 }
@@ -19,7 +15,7 @@ export function signToken(payload: JwtUserPayload): string {
  * Verifies a JWT token and returns the decoded payload.
  * Throws JsonWebTokenError / TokenExpiredError if invalid or expired.
  */
-export function verifyToken(token: string): JwtUserPayload {
+function verifyToken(token) {
   const decoded = jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] })
   if (
     typeof decoded !== 'object' ||
@@ -31,3 +27,5 @@ export function verifyToken(token: string): JwtUserPayload {
   }
   return { userId: decoded.userId }
 }
+
+module.exports = { signToken, verifyToken }

@@ -1,14 +1,14 @@
-import dotenv from 'dotenv'
-import path from 'path'
+const dotenv = require('dotenv')
+const path = require('path')
 
 // Load .env from the server root
 dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 
-function optional(key: string, fallback: string): string {
+function optional(key, fallback) {
   return process.env[key] ?? fallback
 }
 
-function required(key: string, devFallback?: string): string {
+function required(key, devFallback) {
   const val = process.env[key] ?? (process.env.NODE_ENV === 'development' ? devFallback : undefined)
   if (!val) {
     throw new Error(`[Config] Missing required environment variable: ${key}`)
@@ -17,11 +17,9 @@ function required(key: string, devFallback?: string): string {
 }
 
 /**
- * Typed, validated environment configuration.
- * Add new variables here as modules are implemented.
- * Throws at startup if a required variable is missing.
+ * Validated environment configuration.
  */
-export const env = {
+const env = {
   NODE_ENV: optional('NODE_ENV', 'development'),
   PORT: parseInt(optional('PORT', '4000'), 10),
   CLIENT_URL: optional('CLIENT_URL', 'http://localhost:5173'),
@@ -38,11 +36,13 @@ export const env = {
   ),
   JWT_EXPIRES_IN: optional('JWT_EXPIRES_IN', '7d'),
   BCRYPT_ROUNDS: parseInt(optional('BCRYPT_ROUNDS', '10'), 10),
-} as const
+}
 
 if (!Number.isInteger(env.BCRYPT_ROUNDS) || env.BCRYPT_ROUNDS < 10 || env.BCRYPT_ROUNDS > 15) {
   throw new Error('[Config] BCRYPT_ROUNDS must be an integer between 10 and 15')
 }
 
-export const isDev = env.NODE_ENV === 'development'
-export const isProd = env.NODE_ENV === 'production'
+const isDev = env.NODE_ENV === 'development'
+const isProd = env.NODE_ENV === 'production'
+
+module.exports = { env, isDev, isProd }
