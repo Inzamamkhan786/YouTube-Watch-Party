@@ -22,6 +22,7 @@ const prismaMock = vi.hoisted(() => ({
 vi.mock('../lib/prisma', () => ({ prisma: prismaMock }))
 
 import { AuthService } from './auth.service'
+import { resolveSmtpFromAddress } from './email.service'
 
 const createdUser = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -139,5 +140,13 @@ describe('AuthService', () => {
     const result = await service.verifyEmail({ tokenOrOtp: '123456', email: 'user@example.com' })
     expect(result.message).toContain('Email verified successfully')
     expect(prismaMock.$transaction).toHaveBeenCalled()
+  })
+
+  it('uses the authenticated SMTP user as a safe fallback when the configured sender is missing or invalid', () => {
+    const from = resolveSmtpFromAddress('SyncTube', 'haquemdinzamamu@gmail.com')
+    expect(from).toBe('SyncTube <haquemdinzamamu@gmail.com>')
+
+    const fromWithoutDisplayName = resolveSmtpFromAddress('', 'haquemdinzamamu@gmail.com')
+    expect(fromWithoutDisplayName).toBe('haquemdinzamamu@gmail.com')
   })
 })

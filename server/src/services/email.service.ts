@@ -19,6 +19,33 @@ const allowedPalette = {
   blue: '#065fd4',
 }
 
+export function resolveSmtpFromAddress(fromValue?: string, smtpUser?: string): string {
+  const configuredFrom = String(fromValue ?? '').trim()
+  const user = String(smtpUser ?? env.SMTP_USER ?? '').trim()
+
+  if (!user) {
+    return configuredFrom || 'no-reply@synctube.local'
+  }
+
+  if (!configuredFrom) {
+    return user
+  }
+
+  if (configuredFrom.includes('<') && configuredFrom.includes('>') && /<[^\s@]+@[^\s@]+\.[^\s@]+>/.test(configuredFrom)) {
+    return configuredFrom
+  }
+
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(configuredFrom)) {
+    return configuredFrom
+  }
+
+  if (configuredFrom.includes('<') || configuredFrom.includes('>')) {
+    return user
+  }
+
+  return `${configuredFrom} <${user}>`
+}
+
 function isSmtpConfigured(): boolean {
   if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASSWORD) {
     return false
@@ -153,7 +180,7 @@ async function sendEmail({
 
   try {
     await transport.sendMail({
-      from: env.SMTP_FROM,
+      from: resolveSmtpFromAddress(env.SMTP_FROM, env.SMTP_USER),
       to,
       subject,
       html,
