@@ -84,17 +84,6 @@ export default function LoginPage() {
             role="alert"
           >
             <div>{flashMessage ?? displayError}</div>
-            {displayError && displayError.toLowerCase().includes('verify your email') && (
-              <div className="mt-1.5 pt-1.5 border-t border-red-200">
-                <Link
-                  to={ROUTES.VERIFY_EMAIL}
-                  state={{ email: email.trim() }}
-                  className="font-semibold underline hover:opacity-80"
-                >
-                  Enter verification OTP code or resend →
-                </Link>
-              </div>
-            )}
           </div>
         )}
 
@@ -136,26 +125,17 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <div className="flex items-center justify-between text-xs pt-1">
+        <div className="text-center text-xs pt-1">
+          <span style={{ color: 'var(--color-black)', opacity: 0.6 }}>
+            Need an account?{' '}
+          </span>
           <Link
-            to={ROUTES.FORGOT_PASSWORD}
+            to={ROUTES.REGISTER}
             className="font-medium hover:underline"
             style={{ color: 'var(--color-blue)' }}
           >
-            Forgot Password?
+            Create one now
           </Link>
-          <div>
-            <span style={{ color: 'var(--color-black)', opacity: 0.6 }}>
-              Need an account?{' '}
-            </span>
-            <Link
-              to={ROUTES.REGISTER}
-              className="font-medium hover:underline"
-              style={{ color: 'var(--color-blue)' }}
-            >
-              Create one now
-            </Link>
-          </div>
         </div>
       </div>
     </div>

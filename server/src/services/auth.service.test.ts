@@ -57,8 +57,8 @@ describe('AuthService', () => {
     }))
     const hash = prismaMock.user.create.mock.calls[0][0].data.passwordHash
     expect(await bcrypt.compare('correct horse battery staple', hash)).toBe(true)
-    expect(result.message).toContain('check your email')
-    expect(prismaMock.authToken.create).toHaveBeenCalled()
+    expect(result.message).toContain('Account created successfully')
+    expect(prismaMock.authToken.create).not.toHaveBeenCalled()
   })
 
   it('logs in with valid credentials', async () => {
@@ -76,7 +76,7 @@ describe('AuthService', () => {
     expect(result.token).toEqual(expect.any(String))
   })
 
-  it('rejects login for unverified users before issuing a session token', async () => {
+  it('allows unverified users to sign in in the simplified no-verification flow', async () => {
     const passwordHash = await bcrypt.hash('password123', 10)
     prismaMock.user.findUnique.mockResolvedValue({
       ...createdUser,
@@ -85,8 +85,10 @@ describe('AuthService', () => {
       isActive: true,
     })
 
-    await expect(service.login({ email: 'USER@example.com', password: 'password123' }))
-      .rejects.toMatchObject({ statusCode: 403, message: 'Please verify your email before signing in.' })
+    const result = await service.login({ email: 'USER@example.com', password: 'password123' })
+
+    expect(result.user.email).toBe('user@example.com')
+    expect(result.token).toEqual(expect.any(String))
   })
 
   it('rejects invalid credentials without revealing which field failed', async () => {

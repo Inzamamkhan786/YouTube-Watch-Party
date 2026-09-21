@@ -4,7 +4,6 @@ import { prisma } from '../lib/prisma'
 import { env } from '../config/env'
 import { signToken } from '../utils/jwt'
 import { AppError } from '../middleware/errorHandler'
-import { emailService } from './email.service'
 
 export interface RegisterInput {
   username: string
@@ -215,16 +214,7 @@ export class AuthService {
       })
     }
 
-    const { rawToken, otp } = await this.createVerificationTokens(user.id)
-
-    const emailSent = await emailService.sendVerificationEmail({
-      email: user.email,
-      username: user.username,
-      otp,
-      verificationUrl: buildFrontendUrl('/verify-email', { token: rawToken, email: user.email }),
-    })
-
-    const message = 'Account created. Please check your email for your 6-digit verification code.'
+    const message = 'Account created successfully. You can sign in now.'
 
     return {
       user: {
@@ -236,7 +226,6 @@ export class AuthService {
         createdAt: user.createdAt,
       },
       message,
-      emailSent,
     }
   }
 
@@ -273,10 +262,6 @@ export class AuthService {
     const isMatch = await bcrypt.compare(password, user.passwordHash)
     if (!isMatch) {
       throw new AppError(401, 'Invalid email or password')
-    }
-
-    if (!user.emailVerified) {
-      throw new AppError(403, 'Please verify your email before signing in.')
     }
 
     const token = signToken({ userId: user.id })

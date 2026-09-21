@@ -62,11 +62,11 @@ export default function RegisterPage() {
         email: trimmedEmail,
         password,
       })
-      navigate(ROUTES.VERIFY_EMAIL, {
+      navigate(ROUTES.LOGIN, {
         replace: true,
         state: {
-          email: trimmedEmail,
           message: result?.message,
+          from: { pathname: ROUTES.HOME },
         },
       })
     } catch (err) {
