@@ -224,9 +224,7 @@ export class AuthService {
       verificationUrl: buildFrontendUrl('/verify-email', { token: rawToken, email: user.email }),
     })
 
-    const message = emailSent
-      ? 'Account created. Please check your email for your 6-digit verification code.'
-      : `Account created. Please check your email or use verification code: ${otp}`
+    const message = 'Account created. Please check your email for your 6-digit verification code.'
 
     return {
       user: {
@@ -239,7 +237,6 @@ export class AuthService {
       },
       message,
       emailSent,
-      ...(!emailSent ? { devOtp: otp } : {}),
     }
   }
 
@@ -408,14 +405,11 @@ export class AuthService {
       verificationUrl: buildFrontendUrl('/verify-email', { token: rawToken, email: user.email }),
     })
 
-    const message = emailSent
-      ? 'A new verification code has been sent to your email.'
-      : `Verification code generated: ${otp}`
+    const message = 'A new verification code has been sent to your email.'
 
     return {
       message,
       emailSent,
-      ...(!emailSent ? { devOtp: otp } : {}),
     }
   }
 

@@ -15,13 +15,18 @@ export default function VerifyEmailPage() {
   )
   const [otp, setOtp] = useState('')
   const [status, setStatus] = useState('idle') // 'idle' | 'loading' | 'success' | 'error'
-  const [message, setMessage] = useState(location.state?.message || '')
+  const [message, setMessage] = useState(() => {
+    const raw = location.state?.message || ''
+    if (raw.includes('or use verification code:') || raw.includes('Verification code generated:')) {
+      return 'Account created. Please check your email for your 6-digit verification code.'
+    }
+    return raw
+  })
   const [submitting, setSubmitting] = useState(false)
   const [resending, setResending] = useState(false)
   const [cooldown, setCooldown] = useState(0)
 
   const tokenParam = searchParams.get('token') || searchParams.get('otp')
-  const devOtp = location.state?.devOtp
 
   // Handle countdown timer for resend
   useEffect(() => {
@@ -185,23 +190,6 @@ export default function VerifyEmailPage() {
             role="alert"
           >
             {message}
-          </div>
-        )}
-
-        {/* Dev OTP Quick Fill Helper (for local/testing or when SMTP is unconfigured) */}
-        {devOtp && !isSuccess && (
-          <div className="p-3 text-xs rounded-lg border border-amber-200 bg-amber-50 text-amber-900 flex items-center justify-between">
-            <div>
-              <span className="font-semibold">Test Code: </span>
-              <span className="font-mono font-bold text-sm tracking-widest">{devOtp}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setOtp(devOtp)}
-              className="text-xs font-semibold px-2 py-1 rounded bg-amber-200 hover:bg-amber-300 text-amber-900 transition-colors"
-            >
-              Fill Code
-            </button>
           </div>
         )}
 

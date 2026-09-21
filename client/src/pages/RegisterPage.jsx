@@ -67,7 +67,6 @@ export default function RegisterPage() {
         state: {
           email: trimmedEmail,
           message: result?.message,
-          devOtp: result?.devOtp,
         },
       })
     } catch (err) {
