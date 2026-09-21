@@ -361,73 +361,14 @@ export class AuthService {
     emailSent?: boolean
     devOtp?: string
   }> {
-    const normalizedEmail = normalizeEmail(email ?? '')
-    if (!normalizedEmail || !EMAIL_REGEX.test(normalizedEmail)) {
-      throw new AppError(400, 'A valid email address is required')
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        emailVerified: true,
-      },
-    })
-
-    if (!user || user.emailVerified) {
-      return {
-        message: 'If an account exists for this email, a new verification code has been sent.',
-      }
-    }
-
-    const { rawToken, otp } = await this.createVerificationTokens(user.id)
-    const emailSent = await emailService.sendVerificationEmail({
-      email: user.email,
-      username: user.username,
-      otp,
-      verificationUrl: buildFrontendUrl('/verify-email', { token: rawToken, email: user.email }),
-    })
-
-    const message = 'A new verification code has been sent to your email.'
-
     return {
-      message,
-      emailSent,
+      message: 'Email verification is currently disabled. You can sign in immediately.',
     }
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
-    const normalizedEmail = normalizeEmail(email ?? '')
-    if (!normalizedEmail || !EMAIL_REGEX.test(normalizedEmail)) {
-      throw new AppError(400, 'A valid email address is required')
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-      },
-    })
-
-    if (!user) {
-      return {
-        message: 'If an account exists for this email, a password reset link has been sent.',
-      }
-    }
-
-    const resetToken = await this.createAuthToken(user.id, 'PASSWORD_RESET')
-    await emailService.sendPasswordResetEmail({
-      email: user.email,
-      username: user.username,
-      resetUrl: buildFrontendUrl('/reset-password', { token: resetToken }),
-    })
-
     return {
-      message: 'If an account exists for this email, a password reset link has been sent.',
+      message: 'Password reset is currently disabled. Please sign in with your password.',
     }
   }
 
