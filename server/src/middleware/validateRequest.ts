@@ -54,9 +54,14 @@ export const validateEmailOnly: RequestHandler = (req, _res, next) => {
 }
 
 export const validateVerificationToken: RequestHandler = (req, _res, next) => {
-  const token = typeof req.query?.token === 'string' ? req.query.token.trim() : ''
-  if (!token || token.length < 20) {
-    next(new AppError(400, 'Invalid or expired verification token'))
+  const tokenOrOtp =
+    (typeof req.body?.otp === 'string' && req.body.otp.trim()) ||
+    (typeof req.body?.token === 'string' && req.body.token.trim()) ||
+    (typeof req.query?.otp === 'string' && req.query.otp.trim()) ||
+    (typeof req.query?.token === 'string' && req.query.token.trim()) ||
+    ''
+  if (!tokenOrOtp || tokenOrOtp.length < 6) {
+    next(new AppError(400, 'Invalid or expired verification code'))
     return
   }
   next()

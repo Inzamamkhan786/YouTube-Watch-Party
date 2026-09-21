@@ -83,10 +83,54 @@ export class AuthService {
     return rawToken
   }
 
+  private async createVerificationTokens(userId: string): Promise<{ rawToken: string; otp: string }> {
+    const rawToken = crypto.randomBytes(32).toString('hex')
+    // Generate secure 6-digit numeric OTP code (100000 - 999999)
+    const otp = String(crypto.randomInt(100000, 1000000))
+
+    const rawTokenHash = createTokenHash(rawToken)
+    const otpHash = createTokenHash(otp)
+    const expiresAt = createExpiryDate(EMAIL_VERIFICATION_TTL_MS)
+
+    await prisma.authToken.deleteMany({
+      where: {
+        userId,
+        type: 'EMAIL_VERIFICATION',
+      },
+    })
+
+    // Store both hashes so either entering the 6-digit OTP or clicking the long token link verifies the account
+    await Promise.all([
+      prisma.authToken.create({
+        data: {
+          userId,
+          tokenHash: rawTokenHash,
+          type: 'EMAIL_VERIFICATION',
+          expiresAt,
+        },
+      }),
+      prisma.authToken.create({
+        data: {
+          userId,
+          tokenHash: otpHash,
+          type: 'EMAIL_VERIFICATION',
+          expiresAt,
+        },
+      }),
+    ])
+
+    return { rawToken, otp }
+  }
+
   /**
    * Registers a new user and triggers an email verification flow.
    */
-  async register(input: RegisterInput): Promise<{ user: UserResponse; message: string }> {
+  async register(input: RegisterInput): Promise<{
+    user: UserResponse
+    message: string
+    emailSent?: boolean
+    devOtp?: string
+  }> {
     const email = normalizeEmail(input.email ?? '')
     const username = input.username?.trim()
     const password = input.password
@@ -108,47 +152,81 @@ export class AuthService {
 
     const existingEmail = await prisma.user.findUnique({
       where: { email },
-      select: { id: true },
+      select: { id: true, emailVerified: true, username: true },
     })
-    if (existingEmail) {
+    if (existingEmail && existingEmail.emailVerified) {
       throw new AppError(409, 'An account with this email already exists')
     }
 
     const existingUsername = await prisma.user.findUnique({
       where: { username },
-      select: { id: true },
+      select: { id: true, emailVerified: true, email: true },
     })
-    if (existingUsername) {
+    if (existingUsername && existingUsername.emailVerified && existingUsername.email !== email) {
       throw new AppError(409, 'Username is already taken')
     }
 
     const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS)
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        username,
-        passwordHash,
-        displayName: username,
-        emailVerified: false,
-      },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        displayName: true,
-        avatarUrl: true,
-        createdAt: true,
-      },
-    })
+    let user: {
+      id: string
+      email: string
+      username: string
+      displayName: string | null
+      avatarUrl: string | null
+      createdAt: Date
+    }
 
-    const verificationToken = await this.createAuthToken(user.id, 'EMAIL_VERIFICATION')
+    if (existingEmail && !existingEmail.emailVerified) {
+      // Prior attempt had failed verification/email; update unverified account seamlessly
+      user = await prisma.user.update({
+        where: { id: existingEmail.id },
+        data: {
+          username,
+          passwordHash,
+          displayName: username,
+        },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+          createdAt: true,
+        },
+      })
+    } else {
+      user = await prisma.user.create({
+        data: {
+          email,
+          username,
+          passwordHash,
+          displayName: username,
+          emailVerified: false,
+        },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+          createdAt: true,
+        },
+      })
+    }
 
-    await emailService.sendVerificationEmail({
+    const { rawToken, otp } = await this.createVerificationTokens(user.id)
+
+    const emailSent = await emailService.sendVerificationEmail({
       email: user.email,
       username: user.username,
-      verificationUrl: buildFrontendUrl('/verify-email', { token: verificationToken }),
+      otp,
+      verificationUrl: buildFrontendUrl('/verify-email', { token: rawToken, email: user.email }),
     })
+
+    const message = emailSent
+      ? 'Account created. Please check your email for your 6-digit verification code.'
+      : `Account created. Please check your email or use verification code: ${otp}`
 
     return {
       user: {
@@ -159,7 +237,9 @@ export class AuthService {
         avatarUrl: user.avatarUrl,
         createdAt: user.createdAt,
       },
-      message: 'Account created. Please check your email to verify your account.',
+      message,
+      emailSent,
+      ...(!emailSent ? { devOtp: otp } : {}),
     }
   }
 
@@ -217,13 +297,17 @@ export class AuthService {
     }
   }
 
-  async verifyEmail(token: string): Promise<{ message: string }> {
-    const trimmedToken = token?.trim() ?? ''
-    if (!trimmedToken) {
-      throw new AppError(400, 'Invalid or expired verification token')
+  async verifyEmail(input: string | { tokenOrOtp: string; email?: string }): Promise<{ message: string }> {
+    const rawInput = typeof input === 'string' ? input : input?.tokenOrOtp
+    const trimmedInput = rawInput?.trim() ?? ''
+    if (!trimmedInput) {
+      throw new AppError(400, 'Invalid or expired verification code')
     }
 
-    const tokenHash = createTokenHash(trimmedToken)
+    const providedEmail =
+      typeof input === 'object' && input?.email ? normalizeEmail(input.email) : undefined
+
+    const tokenHash = createTokenHash(trimmedInput)
     const authToken = await prisma.authToken.findFirst({
       where: {
         tokenHash,
@@ -243,21 +327,31 @@ export class AuthService {
     })
 
     if (!authToken || !authToken.user) {
-      throw new AppError(400, 'Invalid or expired verification token')
+      throw new AppError(400, 'Invalid or expired verification code')
+    }
+
+    if (providedEmail && authToken.user.email !== providedEmail) {
+      throw new AppError(400, 'Verification code does not match this email address')
     }
 
     if (authToken.expiresAt <= new Date()) {
-      await prisma.authToken.delete({ where: { id: authToken.id } })
-      throw new AppError(400, 'Verification link has expired. Please request a new one.')
+      await prisma.authToken.deleteMany({
+        where: { userId: authToken.userId, type: 'EMAIL_VERIFICATION' },
+      })
+      throw new AppError(400, 'Verification code has expired. Please request a new one.')
     }
 
     if (authToken.usedAt) {
-      await prisma.authToken.delete({ where: { id: authToken.id } })
-      throw new AppError(400, 'This verification link has already been used.')
+      await prisma.authToken.deleteMany({
+        where: { userId: authToken.userId, type: 'EMAIL_VERIFICATION' },
+      })
+      throw new AppError(400, 'This verification code has already been used.')
     }
 
     if (authToken.user.emailVerified) {
-      await prisma.authToken.delete({ where: { id: authToken.id } })
+      await prisma.authToken.deleteMany({
+        where: { userId: authToken.userId, type: 'EMAIL_VERIFICATION' },
+      })
       return { message: 'Your email is already verified. You can sign in now.' }
     }
 
@@ -269,13 +363,22 @@ export class AuthService {
           emailVerifiedAt: new Date(),
         },
       })
-      await tx.authToken.delete({ where: { id: authToken.id } })
+      await tx.authToken.deleteMany({
+        where: {
+          userId: authToken.userId,
+          type: 'EMAIL_VERIFICATION',
+        },
+      })
     })
 
     return { message: 'Email verified successfully. You can now sign in.' }
   }
 
-  async resendVerification(email: string): Promise<{ message: string }> {
+  async resendVerification(email: string): Promise<{
+    message: string
+    emailSent?: boolean
+    devOtp?: string
+  }> {
     const normalizedEmail = normalizeEmail(email ?? '')
     if (!normalizedEmail || !EMAIL_REGEX.test(normalizedEmail)) {
       throw new AppError(400, 'A valid email address is required')
@@ -293,19 +396,26 @@ export class AuthService {
 
     if (!user || user.emailVerified) {
       return {
-        message: 'If an account exists for this email, a new verification link has been sent.',
+        message: 'If an account exists for this email, a new verification code has been sent.',
       }
     }
 
-    const verificationToken = await this.createAuthToken(user.id, 'EMAIL_VERIFICATION')
-    await emailService.sendVerificationEmail({
+    const { rawToken, otp } = await this.createVerificationTokens(user.id)
+    const emailSent = await emailService.sendVerificationEmail({
       email: user.email,
       username: user.username,
-      verificationUrl: buildFrontendUrl('/verify-email', { token: verificationToken }),
+      otp,
+      verificationUrl: buildFrontendUrl('/verify-email', { token: rawToken, email: user.email }),
     })
 
+    const message = emailSent
+      ? 'A new verification code has been sent to your email.'
+      : `Verification code generated: ${otp}`
+
     return {
-      message: 'If an account exists for this email, a new verification link has been sent.',
+      message,
+      emailSent,
+      ...(!emailSent ? { devOtp: otp } : {}),
     }
   }
 

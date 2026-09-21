@@ -57,14 +57,18 @@ export default function RegisterPage() {
 
     try {
       setSubmitting(true)
-      await register({
+      const result = await register({
         username: trimmedUser,
         email: trimmedEmail,
         password,
       })
       navigate(ROUTES.VERIFY_EMAIL, {
         replace: true,
-        state: { email: trimmedEmail },
+        state: {
+          email: trimmedEmail,
+          message: result?.message,
+          devOtp: result?.devOtp,
+        },
       })
     } catch (err) {
       const message =

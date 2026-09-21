@@ -30,12 +30,23 @@ export class AuthController {
   }
 
   /**
-   * GET /api/auth/verify-email?token=...
+   * GET or POST /api/auth/verify-email
+   * POST /api/auth/verify-otp
    */
   async verifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const token = typeof req.query.token === 'string' ? req.query.token : ''
-      const result = await authService.verifyEmail(token)
+      const tokenOrOtp =
+        (typeof req.body?.otp === 'string' && req.body.otp.trim()) ||
+        (typeof req.body?.token === 'string' && req.body.token.trim()) ||
+        (typeof req.query?.otp === 'string' && req.query.otp.trim()) ||
+        (typeof req.query?.token === 'string' && req.query.token.trim()) ||
+        ''
+      const email =
+        (typeof req.body?.email === 'string' && req.body.email.trim()) ||
+        (typeof req.query?.email === 'string' && req.query.email.trim()) ||
+        undefined
+
+      const result = await authService.verifyEmail({ tokenOrOtp, email })
       sendSuccess(res, result, result.message)
     } catch (err) {
       next(err)

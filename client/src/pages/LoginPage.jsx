@@ -83,7 +83,18 @@ export default function LoginPage() {
             }}
             role="alert"
           >
-            {flashMessage ?? displayError}
+            <div>{flashMessage ?? displayError}</div>
+            {displayError && displayError.toLowerCase().includes('verify your email') && (
+              <div className="mt-1.5 pt-1.5 border-t border-red-200">
+                <Link
+                  to={ROUTES.VERIFY_EMAIL}
+                  state={{ email: email.trim() }}
+                  className="font-semibold underline hover:opacity-80"
+                >
+                  Enter verification OTP code or resend →
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

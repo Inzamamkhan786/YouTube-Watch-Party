@@ -22,8 +22,16 @@ export async function registerApi(credentials) {
   return data.data
 }
 
-export async function verifyEmailApi(token) {
-  const { data } = await apiClient.get(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
+export async function verifyEmailApi(payload) {
+  if (typeof payload === 'string') {
+    const { data } = await apiClient.get(`/api/auth/verify-email?token=${encodeURIComponent(payload)}`)
+    if (!data.data) {
+      throw new Error(data.error ?? 'Email verification failed')
+    }
+    return data.data
+  }
+
+  const { data } = await apiClient.post('/api/auth/verify-email', payload)
   if (!data.data) {
     throw new Error(data.error ?? 'Email verification failed')
   }

@@ -15,7 +15,7 @@ const prismaMock = vi.hoisted(() => ({
   },
   $transaction: vi.fn(async (cb) => cb({
     user: { update: vi.fn() },
-    authToken: { delete: vi.fn() },
+    authToken: { delete: vi.fn(), deleteMany: vi.fn() },
   })),
 }))
 
@@ -102,5 +102,42 @@ describe('AuthService', () => {
   ])('rejects malformed registration details', async (input) => {
     await expect(service.register(input)).rejects.toMatchObject({ statusCode: 400 })
     expect(prismaMock.user.create).not.toHaveBeenCalled()
+  })
+
+  it('allows unverified user to re-register and updates credentials', async () => {
+    prismaMock.user.findUnique.mockResolvedValueOnce({
+      ...createdUser,
+      emailVerified: false,
+    }).mockResolvedValueOnce(null)
+    prismaMock.user.update.mockResolvedValue(createdUser)
+
+    const result = await service.register({
+      username: 'viewer',
+      email: 'user@example.com',
+      password: 'newpassword123',
+    })
+
+    expect(prismaMock.user.update).toHaveBeenCalled()
+    expect(result.user.email).toBe('user@example.com')
+  })
+
+  it('verifies user with valid OTP code', async () => {
+    prismaMock.authToken.findFirst.mockResolvedValue({
+      id: 'token-123',
+      userId: createdUser.id,
+      expiresAt: new Date(Date.now() + 60000),
+      usedAt: null,
+      user: {
+        id: createdUser.id,
+        email: 'user@example.com',
+        username: 'viewer',
+        emailVerified: false,
+        isActive: true,
+      },
+    })
+
+    const result = await service.verifyEmail({ tokenOrOtp: '123456', email: 'user@example.com' })
+    expect(result.message).toContain('Email verified successfully')
+    expect(prismaMock.$transaction).toHaveBeenCalled()
   })
 })
