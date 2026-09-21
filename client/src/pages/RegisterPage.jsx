@@ -62,7 +62,10 @@ export default function RegisterPage() {
         email: trimmedEmail,
         password,
       })
-      navigate(ROUTES.HOME, { replace: true })
+      navigate(ROUTES.VERIFY_EMAIL, {
+        replace: true,
+        state: { email: trimmedEmail },
+      })
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Registration failed. Please try again.'

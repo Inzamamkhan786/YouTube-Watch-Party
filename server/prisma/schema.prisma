@@ -40,15 +40,17 @@ enum ActionStatus {
 // ─────────────────────────────────────────────────────────────
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  username     String   @unique
-  passwordHash String
-  displayName  String?
-  avatarUrl    String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String    @id @default(uuid())
+  email            String    @unique
+  username         String    @unique
+  passwordHash     String
+  displayName      String?
+  avatarUrl        String?
+  isActive         Boolean   @default(true)
+  emailVerified    Boolean   @default(false)
+  emailVerifiedAt  DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Relations
   hostedRooms          Room[]          @relation("RoomHost")
@@ -57,9 +59,31 @@ model User {
   reactions            Reaction[]
   actionRequests       ActionRequest[] @relation("UserActionRequests")
   reviewedRequests     ActionRequest[] @relation("ReviewedActionRequests")
+  authTokens           AuthToken[]
 
   @@index([email])
   @@map("users")
+}
+
+enum AuthTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model AuthToken {
+  id        String        @id @default(uuid())
+  userId    String
+  tokenHash String        @unique
+  type      AuthTokenType
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([type, expiresAt])
+  @@map("auth_tokens")
 }
 
 model Room {

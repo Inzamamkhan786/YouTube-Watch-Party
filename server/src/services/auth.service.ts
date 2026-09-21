@@ -1,8 +1,10 @@
+import crypto from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma'
 import { env } from '../config/env'
 import { signToken } from '../utils/jwt'
 import { AppError } from '../middleware/errorHandler'
+import { emailService } from './email.service'
 
 export interface RegisterInput {
   username: string
@@ -31,13 +33,61 @@ export interface AuthResult {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,30}$/
+const EMAIL_VERIFICATION_TTL_MS = 30 * 60 * 1000
+const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000
+
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase()
+}
+
+function createTokenHash(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex')
+}
+
+function createExpiryDate(ttlMs: number): Date {
+  return new Date(Date.now() + ttlMs)
+}
+
+function buildFrontendUrl(path: string, query?: Record<string, string>): string {
+  const url = new URL(path, env.FRONTEND_URL)
+  if (query) {
+    Object.entries(query).forEach(([key, value]) => {
+      url.searchParams.set(key, value)
+    })
+  }
+  return url.toString()
+}
 
 export class AuthService {
+  private async createAuthToken(userId: string, type: 'EMAIL_VERIFICATION' | 'PASSWORD_RESET'): Promise<string> {
+    const rawToken = crypto.randomBytes(32).toString('hex')
+    const tokenHash = createTokenHash(rawToken)
+    const expiresAt = createExpiryDate(type === 'EMAIL_VERIFICATION' ? EMAIL_VERIFICATION_TTL_MS : PASSWORD_RESET_TTL_MS)
+
+    await prisma.authToken.deleteMany({
+      where: {
+        userId,
+        type,
+      },
+    })
+
+    await prisma.authToken.create({
+      data: {
+        userId,
+        tokenHash,
+        type,
+        expiresAt,
+      },
+    })
+
+    return rawToken
+  }
+
   /**
-   * Registers a new user.
+   * Registers a new user and triggers an email verification flow.
    */
-  async register(input: RegisterInput): Promise<AuthResult> {
-    const email = input.email?.trim().toLowerCase()
+  async register(input: RegisterInput): Promise<{ user: UserResponse; message: string }> {
+    const email = normalizeEmail(input.email ?? '')
     const username = input.username?.trim()
     const password = input.password
 
@@ -56,7 +106,6 @@ export class AuthService {
       throw new AppError(400, 'Password must be at least 6 characters long')
     }
 
-    // Check email uniqueness
     const existingEmail = await prisma.user.findUnique({
       where: { email },
       select: { id: true },
@@ -65,7 +114,6 @@ export class AuthService {
       throw new AppError(409, 'An account with this email already exists')
     }
 
-    // Check username uniqueness
     const existingUsername = await prisma.user.findUnique({
       where: { username },
       select: { id: true },
@@ -74,7 +122,6 @@ export class AuthService {
       throw new AppError(409, 'Username is already taken')
     }
 
-    // Hash password with bcrypt
     const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS)
 
     const user = await prisma.user.create({
@@ -83,6 +130,7 @@ export class AuthService {
         username,
         passwordHash,
         displayName: username,
+        emailVerified: false,
       },
       select: {
         id: true,
@@ -94,16 +142,32 @@ export class AuthService {
       },
     })
 
-    const token = signToken({ userId: user.id })
+    const verificationToken = await this.createAuthToken(user.id, 'EMAIL_VERIFICATION')
 
-    return { user, token }
+    await emailService.sendVerificationEmail({
+      email: user.email,
+      username: user.username,
+      verificationUrl: buildFrontendUrl('/verify-email', { token: verificationToken }),
+    })
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        createdAt: user.createdAt,
+      },
+      message: 'Account created. Please check your email to verify your account.',
+    }
   }
 
   /**
    * Authenticates an existing user.
    */
   async login(input: LoginInput): Promise<AuthResult> {
-    const email = input.email?.trim().toLowerCase()
+    const email = normalizeEmail(input.email ?? '')
     const password = input.password
 
     if (!email || !password || password.length > 128) {
@@ -120,6 +184,7 @@ export class AuthService {
         avatarUrl: true,
         passwordHash: true,
         isActive: true,
+        emailVerified: true,
         createdAt: true,
       },
     })
@@ -131,6 +196,10 @@ export class AuthService {
     const isMatch = await bcrypt.compare(password, user.passwordHash)
     if (!isMatch) {
       throw new AppError(401, 'Invalid email or password')
+    }
+
+    if (!user.emailVerified) {
+      throw new AppError(403, 'Please verify your email before signing in.')
     }
 
     const token = signToken({ userId: user.id })
@@ -146,6 +215,188 @@ export class AuthService {
       },
       token,
     }
+  }
+
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const trimmedToken = token?.trim() ?? ''
+    if (!trimmedToken) {
+      throw new AppError(400, 'Invalid or expired verification token')
+    }
+
+    const tokenHash = createTokenHash(trimmedToken)
+    const authToken = await prisma.authToken.findFirst({
+      where: {
+        tokenHash,
+        type: 'EMAIL_VERIFICATION',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            emailVerified: true,
+            isActive: true,
+          },
+        },
+      },
+    })
+
+    if (!authToken || !authToken.user) {
+      throw new AppError(400, 'Invalid or expired verification token')
+    }
+
+    if (authToken.expiresAt <= new Date()) {
+      await prisma.authToken.delete({ where: { id: authToken.id } })
+      throw new AppError(400, 'Verification link has expired. Please request a new one.')
+    }
+
+    if (authToken.usedAt) {
+      await prisma.authToken.delete({ where: { id: authToken.id } })
+      throw new AppError(400, 'This verification link has already been used.')
+    }
+
+    if (authToken.user.emailVerified) {
+      await prisma.authToken.delete({ where: { id: authToken.id } })
+      return { message: 'Your email is already verified. You can sign in now.' }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: authToken.userId },
+        data: {
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+        },
+      })
+      await tx.authToken.delete({ where: { id: authToken.id } })
+    })
+
+    return { message: 'Email verified successfully. You can now sign in.' }
+  }
+
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const normalizedEmail = normalizeEmail(email ?? '')
+    if (!normalizedEmail || !EMAIL_REGEX.test(normalizedEmail)) {
+      throw new AppError(400, 'A valid email address is required')
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        emailVerified: true,
+      },
+    })
+
+    if (!user || user.emailVerified) {
+      return {
+        message: 'If an account exists for this email, a new verification link has been sent.',
+      }
+    }
+
+    const verificationToken = await this.createAuthToken(user.id, 'EMAIL_VERIFICATION')
+    await emailService.sendVerificationEmail({
+      email: user.email,
+      username: user.username,
+      verificationUrl: buildFrontendUrl('/verify-email', { token: verificationToken }),
+    })
+
+    return {
+      message: 'If an account exists for this email, a new verification link has been sent.',
+    }
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const normalizedEmail = normalizeEmail(email ?? '')
+    if (!normalizedEmail || !EMAIL_REGEX.test(normalizedEmail)) {
+      throw new AppError(400, 'A valid email address is required')
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+      },
+    })
+
+    if (!user) {
+      return {
+        message: 'If an account exists for this email, a password reset link has been sent.',
+      }
+    }
+
+    const resetToken = await this.createAuthToken(user.id, 'PASSWORD_RESET')
+    await emailService.sendPasswordResetEmail({
+      email: user.email,
+      username: user.username,
+      resetUrl: buildFrontendUrl('/reset-password', { token: resetToken }),
+    })
+
+    return {
+      message: 'If an account exists for this email, a password reset link has been sent.',
+    }
+  }
+
+  async resetPassword(input: { token: string; password: string }): Promise<{ message: string }> {
+    const token = input.token?.trim() ?? ''
+    const password = input.password
+
+    if (!token || token.length < 20) {
+      throw new AppError(400, 'Invalid or expired password reset token')
+    }
+
+    if (!password || password.length < 6 || password.length > 128) {
+      throw new AppError(400, 'Password must be at least 6 characters long')
+    }
+
+    const tokenHash = createTokenHash(token)
+    const authToken = await prisma.authToken.findFirst({
+      where: {
+        tokenHash,
+        type: 'PASSWORD_RESET',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            passwordHash: true,
+            username: true,
+          },
+        },
+      },
+    })
+
+    if (!authToken || !authToken.user) {
+      throw new AppError(400, 'Invalid or expired password reset token')
+    }
+
+    if (authToken.expiresAt <= new Date()) {
+      await prisma.authToken.delete({ where: { id: authToken.id } })
+      throw new AppError(400, 'Password reset link has expired. Please request a new one.')
+    }
+
+    if (authToken.usedAt) {
+      await prisma.authToken.delete({ where: { id: authToken.id } })
+      throw new AppError(400, 'This password reset link has already been used.')
+    }
+
+    const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS)
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: authToken.userId },
+        data: { passwordHash },
+      })
+      await tx.authToken.delete({ where: { id: authToken.id } })
+    })
+
+    return { message: 'Password reset successfully. You can now sign in.' }
   }
 
   /**

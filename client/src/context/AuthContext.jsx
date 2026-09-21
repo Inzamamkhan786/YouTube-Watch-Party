@@ -90,9 +90,10 @@ export function AuthProvider({ children }) {
     setError(null)
     try {
       const result = await registerApi(credentials)
-      localStorage.setItem(TOKEN_KEY, result.token)
-      setToken(result.token)
-      setUser(result.user)
+      localStorage.removeItem(TOKEN_KEY)
+      setToken(null)
+      setUser(null)
+      return result
     } catch (err) {
       const msg =
         err instanceof Error

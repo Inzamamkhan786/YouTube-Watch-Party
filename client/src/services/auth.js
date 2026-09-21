@@ -22,6 +22,38 @@ export async function registerApi(credentials) {
   return data.data
 }
 
+export async function verifyEmailApi(token) {
+  const { data } = await apiClient.get(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
+  if (!data.data) {
+    throw new Error(data.error ?? 'Email verification failed')
+  }
+  return data.data
+}
+
+export async function resendVerificationApi(payload) {
+  const { data } = await apiClient.post('/api/auth/resend-verification', payload)
+  if (!data.data) {
+    throw new Error(data.error ?? 'Unable to resend verification email')
+  }
+  return data.data
+}
+
+export async function forgotPasswordApi(payload) {
+  const { data } = await apiClient.post('/api/auth/forgot-password', payload)
+  if (!data.data) {
+    throw new Error(data.error ?? 'Unable to process password reset request')
+  }
+  return data.data
+}
+
+export async function resetPasswordApi(payload) {
+  const { data } = await apiClient.post('/api/auth/reset-password', payload)
+  if (!data.data) {
+    throw new Error(data.error ?? 'Password reset failed')
+  }
+  return data.data
+}
+
 /**
  * Fetches the currently authenticated user using stored Bearer token.
  */

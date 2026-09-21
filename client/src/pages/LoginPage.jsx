@@ -10,6 +10,7 @@ export default function LoginPage() {
   const { login, error: authError, clearError } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const flashMessage = location.state?.message
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -72,17 +73,17 @@ export default function LoginPage() {
         </div>
 
         {/* Error Alert */}
-        {displayError && (
+        {(flashMessage || displayError) && (
           <div
             className="p-3 text-xs rounded-md border"
             style={{
-              borderColor: 'var(--color-primary-soft)',
-              backgroundColor: 'var(--color-primary-soft)',
-              color: 'var(--color-primary)',
+              borderColor: flashMessage ? 'var(--color-blue-soft)' : 'var(--color-primary-soft)',
+              backgroundColor: flashMessage ? 'rgba(6, 95, 212, 0.08)' : 'var(--color-primary-soft)',
+              color: flashMessage ? 'var(--color-blue)' : 'var(--color-primary)',
             }}
             role="alert"
           >
-            {displayError}
+            {flashMessage ?? displayError}
           </div>
         )}
 
@@ -124,18 +125,26 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* Footer Link */}
-        <div className="text-center text-xs pt-2">
-          <span style={{ color: 'var(--color-black)', opacity: 0.6 }}>
-            Don't have an account?{' '}
-          </span>
+        <div className="flex items-center justify-between text-xs pt-1">
           <Link
-            to={ROUTES.REGISTER}
+            to={ROUTES.FORGOT_PASSWORD}
             className="font-medium hover:underline"
             style={{ color: 'var(--color-blue)' }}
           >
-            Create one now
+            Forgot Password?
           </Link>
+          <div>
+            <span style={{ color: 'var(--color-black)', opacity: 0.6 }}>
+              Need an account?{' '}
+            </span>
+            <Link
+              to={ROUTES.REGISTER}
+              className="font-medium hover:underline"
+              style={{ color: 'var(--color-blue)' }}
+            >
+              Create one now
+            </Link>
+          </div>
         </div>
       </div>
     </div>

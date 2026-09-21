@@ -44,6 +44,46 @@ export const validateLogin: RequestHandler = (req, _res, next) => {
   next()
 }
 
+export const validateEmailOnly: RequestHandler = (req, _res, next) => {
+  const { email } = req.body ?? {}
+  if (typeof email !== 'string' || !EMAIL.test(email.trim())) {
+    next(new AppError(400, 'A valid email address is required'))
+    return
+  }
+  next()
+}
+
+export const validateVerificationToken: RequestHandler = (req, _res, next) => {
+  const token = typeof req.query?.token === 'string' ? req.query.token.trim() : ''
+  if (!token || token.length < 20) {
+    next(new AppError(400, 'Invalid or expired verification token'))
+    return
+  }
+  next()
+}
+
+export const validateForgotPassword: RequestHandler = (req, _res, next) => {
+  const { email } = req.body ?? {}
+  if (typeof email !== 'string' || !EMAIL.test(email.trim())) {
+    next(new AppError(400, 'A valid email address is required'))
+    return
+  }
+  next()
+}
+
+export const validateResetPassword: RequestHandler = (req, _res, next) => {
+  const { token, password } = req.body ?? {}
+  if (typeof token !== 'string' || token.trim().length < 20) {
+    next(new AppError(400, 'Reset token is required'))
+    return
+  }
+  if (typeof password !== 'string' || password.length < 6 || password.length > 128) {
+    next(new AppError(400, 'Password must be at least 6 characters long'))
+    return
+  }
+  next()
+}
+
 export const validateRoomCodeParam: RequestHandler = (req, _res, next) => {
   if (typeof req.params.roomCode !== 'string' || !ROOM_CODE.test(req.params.roomCode.toUpperCase())) {
     next(new AppError(400, 'Invalid room code'))

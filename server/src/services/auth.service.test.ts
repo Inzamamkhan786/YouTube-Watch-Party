@@ -5,7 +5,18 @@ const prismaMock = vi.hoisted(() => ({
   user: {
     findUnique: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
   },
+  authToken: {
+    deleteMany: vi.fn(),
+    create: vi.fn(),
+    findFirst: vi.fn(),
+    delete: vi.fn(),
+  },
+  $transaction: vi.fn(async (cb) => cb({
+    user: { update: vi.fn() },
+    authToken: { delete: vi.fn() },
+  })),
 }))
 
 vi.mock('../lib/prisma', () => ({ prisma: prismaMock }))
@@ -45,13 +56,15 @@ describe('AuthService', () => {
     }))
     const hash = prismaMock.user.create.mock.calls[0][0].data.passwordHash
     expect(await bcrypt.compare('correct horse battery staple', hash)).toBe(true)
-    expect(result.token).toEqual(expect.any(String))
+    expect(result.message).toContain('check your email')
+    expect(prismaMock.authToken.create).toHaveBeenCalled()
   })
 
   it('logs in with valid credentials', async () => {
     const passwordHash = await bcrypt.hash('password123', 10)
     prismaMock.user.findUnique.mockResolvedValue({
       ...createdUser,
+      emailVerified: true,
       passwordHash,
       isActive: true,
     })
@@ -60,6 +73,19 @@ describe('AuthService', () => {
 
     expect(result.user.email).toBe('user@example.com')
     expect(result.token).toEqual(expect.any(String))
+  })
+
+  it('rejects login for unverified users before issuing a session token', async () => {
+    const passwordHash = await bcrypt.hash('password123', 10)
+    prismaMock.user.findUnique.mockResolvedValue({
+      ...createdUser,
+      emailVerified: false,
+      passwordHash,
+      isActive: true,
+    })
+
+    await expect(service.login({ email: 'USER@example.com', password: 'password123' }))
+      .rejects.toMatchObject({ statusCode: 403, message: 'Please verify your email before signing in.' })
   })
 
   it('rejects invalid credentials without revealing which field failed', async () => {

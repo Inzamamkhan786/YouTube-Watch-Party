@@ -10,7 +10,7 @@ export class AuthController {
     try {
       const { username, email, password } = req.body
       const result = await authService.register({ username, email, password })
-      sendCreated(res, result, 'User registered successfully')
+      sendCreated(res, result, result.message)
     } catch (err) {
       next(err)
     }
@@ -24,6 +24,58 @@ export class AuthController {
       const { email, password } = req.body
       const result = await authService.login({ email, password })
       sendSuccess(res, result, 'Login successful')
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  /**
+   * GET /api/auth/verify-email?token=...
+   */
+  async verifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const token = typeof req.query.token === 'string' ? req.query.token : ''
+      const result = await authService.verifyEmail(token)
+      sendSuccess(res, result, result.message)
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  /**
+   * POST /api/auth/resend-verification
+   */
+  async resendVerification(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { email } = req.body
+      const result = await authService.resendVerification(email)
+      sendSuccess(res, result, result.message)
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  /**
+   * POST /api/auth/forgot-password
+   */
+  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { email } = req.body
+      const result = await authService.forgotPassword(email)
+      sendSuccess(res, result, result.message)
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  /**
+   * POST /api/auth/reset-password
+   */
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token, password } = req.body
+      const result = await authService.resetPassword({ token, password })
+      sendSuccess(res, result, result.message)
     } catch (err) {
       next(err)
     }

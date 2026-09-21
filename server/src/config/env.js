@@ -23,6 +23,7 @@ const env = {
   NODE_ENV: optional('NODE_ENV', 'development'),
   PORT: parseInt(optional('PORT', '4000'), 10),
   CLIENT_URL: optional('CLIENT_URL', 'http://localhost:5173'),
+  FRONTEND_URL: optional('FRONTEND_URL', 'http://localhost:5173'),
   REDIS_URL: optional('REDIS_URL', ''),
   DATABASE_URL: required(
     'DATABASE_URL',
@@ -36,6 +37,14 @@ const env = {
   ),
   JWT_EXPIRES_IN: optional('JWT_EXPIRES_IN', '7d'),
   BCRYPT_ROUNDS: parseInt(optional('BCRYPT_ROUNDS', '10'), 10),
+
+  // Email / SMTP
+  SMTP_HOST: optional('SMTP_HOST', ''),
+  SMTP_PORT: parseInt(optional('SMTP_PORT', '587'), 10),
+  SMTP_SECURE: optional('SMTP_SECURE', 'false').toLowerCase() === 'true',
+  SMTP_USER: optional('SMTP_USER', ''),
+  SMTP_PASSWORD: optional('SMTP_PASSWORD', ''),
+  SMTP_FROM: optional('SMTP_FROM', 'no-reply@synctube.local'),
 }
 
 if (!Number.isInteger(env.BCRYPT_ROUNDS) || env.BCRYPT_ROUNDS < 10 || env.BCRYPT_ROUNDS > 15) {
