@@ -42,18 +42,35 @@ function createTransport() {
     return null
   }
 
+  const host = String(env.SMTP_HOST).trim()
+  const isGmail = host.toLowerCase().includes('gmail')
+  const pass = String(env.SMTP_PASSWORD).replace(/\s+/g, '') // remove spaces from Google app passwords
+  let port = Number(env.SMTP_PORT) || 587
+  let secure = Boolean(env.SMTP_SECURE)
+
+  // Gmail does not support port 2525; auto-correct to 465 SSL
+  if (isGmail && (port === 2525 || !port)) {
+    port = 465
+    secure = true
+  }
+
+  if (port === 465) {
+    secure = true
+  } else if (port === 587) {
+    secure = false
+  }
+
   return nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure: env.SMTP_SECURE,
+    host,
+    port,
+    secure,
     auth: {
-      user: env.SMTP_USER,
-      pass: env.SMTP_PASSWORD,
+      user: String(env.SMTP_USER).trim(),
+      pass,
     },
-    // Prevent hanging requests with reasonable socket timeouts
-    connectionTimeout: 5000,
-    greetingTimeout: 5000,
-    socketTimeout: 8000,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   })
 }
 
